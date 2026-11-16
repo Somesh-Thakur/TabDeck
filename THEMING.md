@@ -9,6 +9,21 @@ rearrange widgets, add overlays: anything CSS can do.
 | **Neon** | **Paper** | **Frosted** |
 | ![](docs/themes/neon.png) | ![](docs/themes/paper.png) | ![](docs/themes/frosted.png) |
 
+### Not just colours: **Orbit** changes the layout
+![Orbit](docs/themes/orbit.png)
+
+Same dashboard, different layout: apps and widgets swapped, the dock stands vertically on the left, round app icons,
+bigger widgets, and Now Playing becomes a vinyl that spins while music plays. All of it is plain CSS. Read
+[`orbit.css`](command-center/themes/orbit.css); every section is commented so you can copy pieces.
+
+The key tricks:
+```css
+.screen   { grid-template-columns: 1fr 560px; }       /* swap the two columns */
+.apps     { order: 1; }  .widgets { order: 2; }
+.dock     { left: 22px; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; }
+.np.is-playing .np-art { animation: spin 9s linear infinite; }
+```
+
 ## Install a theme
 TabDeck settings app → **Themes** → **Upload .css**. It applies instantly. Click any card to switch, and
 **Default** to go back. Uploaded themes have a 🗑 button.

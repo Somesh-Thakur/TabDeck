@@ -1,0 +1,78 @@
+/*
+ * @name Orbit
+ * @author TabDeck
+ * @description Not just colours: mirrored layout, a vertical dock on the left, bigger widgets and a vinyl that spins while music plays.
+ * @colors #07060d #6c4cff #00d0ff #ff4d8d #f5f3ff
+ *
+ * This theme shows what layout changes look like. Every section is commented so you can copy bits into your own.
+ */
+
+/* ---------------------------------------------------------------- colours: deep space */
+:root {
+  --glass: rgba(20, 18, 34, .62); --hair: rgba(160, 140, 255, .16); --glass-hi: rgba(160, 140, 255, .1);
+  --accent: #8f7bff; --blue: #8f7bff;
+  --ring-cpu: #ff4d8d; --ring-gpu: #00d0ff; --ring-ram: #b6a7ff;
+  --r-widget: 36px;
+  --wall-base: #07060d;
+  --wall-img: radial-gradient(45% 60% at 78% 55%, rgba(108, 76, 255, .38) 0%, transparent 70%),
+              radial-gradient(30% 40% at 20% 15%, rgba(0, 208, 255, .16) 0%, transparent 70%),
+              radial-gradient(1px 1px at 12% 30%, #fff 50%, transparent 51%),
+              radial-gradient(1px 1px at 33% 72%, #fff 50%, transparent 51%),
+              radial-gradient(1.5px 1.5px at 52% 18%, #fff 50%, transparent 51%),
+              radial-gradient(1px 1px at 64% 88%, #fff 50%, transparent 51%),
+              radial-gradient(1px 1px at 88% 12%, #fff 50%, transparent 51%),
+              radial-gradient(1.5px 1.5px at 7% 82%, #fff 50%, transparent 51%);
+}
+
+/* ---------------------------------------------------------------- 1. mirror the layout */
+/* the page is a grid: header on top, then [widgets | apps]. Swap the columns and the order. */
+.screen  { grid-template-columns: 1fr 560px; padding: 24px 36px 24px 124px; gap: 18px 36px; }
+.apps    { order: 1; }
+.widgets { order: 2; }
+
+/* no dock at the bottom any more, so the widgets get the extra height */
+.widgets { grid-auto-rows: clamp(130px, calc((100vh - 232px) / 3), 190px); gap: 18px; }
+
+/* ---------------------------------------------------------------- 2. vertical dock on the left */
+.dock {
+  left: 22px; top: 50%; bottom: auto; transform: translateY(-50%);
+  flex-direction: column; padding: 14px 11px; gap: 12px; border-radius: 30px;
+}
+.dk { width: 58px; height: 58px; border-radius: 50% !important; }
+.dc { flex-direction: column; }                     /* Discord buttons stack too */
+.dc .sep { width: 44px; height: 1px; }
+
+/* ---------------------------------------------------------------- 3. header: bigger clock */
+.when .time { font-size: 96px; font-weight: 100; letter-spacing: -4px; }
+.when .date { text-transform: uppercase; letter-spacing: 3px; font-size: 13px; color: var(--accent); }
+
+/* ---------------------------------------------------------------- 4. apps: big circular icons */
+.apps-head h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 3px; color: var(--dim); font-weight: 600; }
+.grid { grid-template-columns: repeat(auto-fill, minmax(114px, 1fr)); grid-auto-rows: 136px; }
+.globe { right: 2px; bottom: 2px; border-radius: 50%; }   /* website badge, inside the circle */
+.app .tile { width: 90px; height: 90px; border-radius: 50% !important;
+             background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, .22), rgba(255, 255, 255, .05)) !important; }
+.app .tile img { width: 56px; height: 56px; }
+.app .tile.web img { border-radius: 50%; }
+.app .name { font-size: 13px; }
+
+/* ---------------------------------------------------------------- 5. rings: chunkier, glowing */
+.rings .val { filter: drop-shadow(0 0 8px currentColor); }
+.perf { padding: 26px; }
+
+/* ---------------------------------------------------------------- 6. Now Playing as a vinyl record */
+.np-art { border-radius: 50% !important; box-shadow: 0 0 0 6px #111, 0 0 0 7px rgba(255, 255, 255, .12), 0 12px 30px rgba(0, 0, 0, .6) !important; }
+.np-art::after {                                   /* the label hole in the middle */
+  content: ""; position: absolute; inset: 41%; border-radius: 50%;
+  background: #0b0a12; box-shadow: 0 0 0 3px rgba(255, 255, 255, .18);
+}
+.np-art .ic { display: none; }                    /* no music-note placeholder: it's a blank record */
+.np:not(.has-art) .np-art { background: repeating-radial-gradient(circle, #16151f 0 2px, #1d1c28 2px 4px) !important; }
+.np.is-playing .np-art { animation: orbit-spin 9s linear infinite; }
+@keyframes orbit-spin { to { transform: rotate(360deg); } }
+.np-ctl .pp { background: var(--accent) !important; color: #fff !important; box-shadow: 0 0 22px rgba(143, 123, 255, .6) !important; }
+.sbar .fill { background: linear-gradient(90deg, #00d0ff, #8f7bff, #ff4d8d) !important; }
+
+/* ---------------------------------------------------------------- 7. pills + pop-ups to match */
+.pill { border-radius: 20px; }
+.banner, .ask { border-radius: 30px !important; }
