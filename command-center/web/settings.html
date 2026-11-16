@@ -184,6 +184,7 @@ code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:
     <button class="nav" data-s="screen"><span class="sq" style="background:#0a9396"><svg class="ic"><use href="#i-screens"/></svg></span>Second Screen</button>
     <button class="nav" data-s="tablet"><span class="sq" style="background:#8e8e93"><svg class="ic"><use href="#i-tablet"/></svg></span>Tablet</button>
     <button class="nav" data-s="mic"><span class="sq" style="background:#30d158"><svg class="ic"><use href="#i-mic"/></svg></span>Microphone</button>
+    <button class="nav" data-s="study"><span class="sq" style="background:#ff9f0a"><svg class="ic"><use href="#i-book"/></svg></span>Study</button>
     <button class="nav" data-s="perf"><span class="sq" style="background:#40c8e0"><svg class="ic"><use href="#i-gauge"/></svg></span>Performance</button>
     <div class="side-foot">Changes apply to the tablet instantly.<br>Closing this window uses no memory.</div>
   </aside>
@@ -301,6 +302,31 @@ code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:
       <div class="group" id="micModes"></div>
     </section>
 
+    <!-- STUDY -->
+    <section id="s-study">
+      <h1>Study</h1><p class="lead">Focus / break sessions on the tablet. During focus, the tablet's camera watches for a phone in your
+        hand and shouts at you. It runs on the tablet with Google's on-device AI: nothing is recorded, saved or sent.</p>
+      <div class="label">SESSION</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t" id="sesT">No session running</div><div class="d" id="sesD">Start one here, or tap the pill at the top of the tablet</div></div><button class="btn primary" id="sesBtn">Start</button></div>
+        <div class="row"><div class="grow"><div class="t">Focus</div></div><div class="seg" data-k="study_focus_min"><button data-v="25">25 min</button><button data-v="45">45 min</button><button data-v="50">50 min</button><button data-v="90">90 min</button></div></div>
+        <div class="row"><div class="grow"><div class="t">Break</div></div><div class="seg" data-k="study_break_min"><button data-v="0">None</button><button data-v="5">5 min</button><button data-v="10">10 min</button><button data-v="15">15 min</button></div></div>
+        <div class="row"><div class="grow"><div class="t">Today</div><div class="d" id="studyStat">–</div></div></div>
+      </div>
+      <div class="label">PHONE WATCH (FOCUS TIME ONLY)</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Phone in your hand for ~10 s</div><div class="d">Red screen, siren, max volume and a voice telling you off. "I really need it" gives you 2 min.</div></div><button class="btn" id="studyTest">Test the alarm</button></div>
+        <div class="row"><div class="grow"><div class="t">Also watch this laptop</div><div class="d">Shouts when a reel site is the front window</div></div><button class="sw" data-k="study_laptop"></button></div>
+        <div class="row"><div class="grow"><div class="t">Words to catch</div><div class="d">In the window title, comma separated</div></div><input class="in" id="studyWords" style="width:260px"></div>
+      </div>
+      <div class="label">AWAY LOCK</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Lock the PC when I'm away for</div><div class="d">Only if the camera sees nobody <b>and</b> nobody touches the PC for that long</div></div>
+          <div class="seg" data-k="away_lock_min"><button data-v="0">Never</button><button data-v="5">5 min</button><button data-v="10">10 min</button><button data-v="15">15 min</button><button data-v="30">30 min</button></div></div>
+        <div class="row"><div class="grow d">Locking doesn't stop anything: Claude and your apps keep running, and Allow / Deny still works from the tablet.</div></div>
+      </div>
+    </section>
+
     <!-- PERFORMANCE -->
     <section id="s-perf">
       <h1>Performance</h1><p class="lead">How much the Command Center costs your laptop.</p>
@@ -340,7 +366,7 @@ async function save(patch,msg){S=await post('settings',patch);render();if(msg)to
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+b.dataset.s));
-  if(b.dataset.s==='perf')status();});
+  if(b.dataset.s==='perf')status();if(b.dataset.s==='study')studyStat();});
 
 /* generic drag-to-reorder for rows */
 function sortable(container,sel,onDrop){
@@ -478,6 +504,20 @@ function renderMic(){
 $('micModes').onclick=e=>{const r=e.target.closest('[data-mode]');if(r)save({mic_source:r.dataset.mode},'Mic mode changed');};
 $('micSw').onclick=async()=>{const on=!$('micSw').classList.contains('on');$('micSw').classList.toggle('on',on);await post('mic',{on});status();};
 
+/* ---------- study */
+const hm=s=>{const m=Math.floor((s||0)/60);return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`;};
+let sesPhase=null;
+function renderStudy(){if(document.activeElement!==$('studyWords'))$('studyWords').value=(S.study_words||[]).join(', ');}
+$('studyWords').onchange=e=>save({study_words:e.target.value.split(',')},'Saved');
+$('studyTest').onclick=()=>{post('study',{event:'test'});toast('Look at the tablet');};
+$('sesBtn').onclick=async()=>{await post('study',{event:sesPhase?'stop':'start'});toast(sesPhase?'Session ended':'Focus time started on the tablet');studyStat();};
+async function studyStat(){const s=await post('study',{});sesPhase=s.phase;const t=s.today;
+  $('studyStat').textContent=`${hm(t.focus_s)} focused · ${t.sessions} session${t.sessions===1?'':'s'} · `+(t.caught?`caught ${t.caught}×`:'not caught once');
+  $('sesT').textContent=!s.phase?'No session running':s.paused_left!=null?'Paused':s.phase==='focus'?`Focus · round ${s.round}`:'Break';
+  $('sesD').textContent=!s.phase?'Start one here, or tap the pill at the top of the tablet':
+    `${Math.max(0,Math.round(((s.paused_left!=null?s.paused_left:s.ends-s.now))/60))} min left · ${hm(s.session_focus)} focused this session`;
+  $('sesBtn').textContent=s.phase?'End':'Start';$('sesBtn').classList.toggle('primary',!s.phase);}
+
 /* ---------- second screen */
 let dActive=false;
 $('dToggle').onclick=async()=>{await post('mode',{mode:dActive?'dashboard':'display'});toast(dActive?'Back to dashboard':'Starting second screen…');setTimeout(status,2500);};
@@ -503,7 +543,7 @@ async function status(){
 }
 
 function render(){
-  renderWidgets();renderDock();renderLook();renderMic();
+  renderWidgets();renderDock();renderLook();renderMic();renderStudy();
   document.querySelectorAll('.sw[data-k]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.k]));
   document.querySelectorAll('.seg[data-k] button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S[b.parentElement.dataset.k]));
   $('volume').value=S.volume;
@@ -517,7 +557,7 @@ function render(){
   [S,apps]=await Promise.all([fetch('settings').then(r=>r.json()),fetch('apps').then(r=>r.json())]);
   render();renderApps();status();loadThemes();
   const start=document.querySelector(`.nav[data-s="${location.hash.slice(1)}"]`);if(start)start.click();  // e.g. settings.html#look
-  setInterval(()=>{if(document.visibilityState==='visible')status();},4000);
+  setInterval(()=>{if(document.visibilityState==='visible'){status();if($('s-study').classList.contains('on'))studyStat();}},4000);
 })();
 </script>
 </body>

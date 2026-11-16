@@ -2,6 +2,9 @@ package dev.somesh.commandcenter;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.speech.tts.TextToSpeech;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,6 +17,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -57,6 +61,9 @@ public class MainActivity extends Activity {
     DisplayClient display;
     AudioClient speaker;
     boolean online, displayOn;
+    TextToSpeech tts;
+    PermissionRequest pendingCam;
+    int savedVolume = -1;
     long lastBack; int backCount;
 
     @Override
@@ -82,7 +89,22 @@ public class MainActivity extends Activity {
         web.setBackgroundColor(Color.BLACK);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         web.addJavascriptInterface(new Bridge(), "CC");
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            // camera (study-mode phone watch / away lock): only our own dashboard may use the camera
+            @Override public void onPermissionRequest(PermissionRequest r) {
+                ui.post(() -> {
+                    String o = String.valueOf(r.getOrigin());
+                    boolean ours = o.startsWith("http://127.0.0.1:8765") || o.startsWith("http://localhost:8765");
+                    if (!ours) { r.deny(); return; }
+                    if (checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        r.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    } else {
+                        pendingCam = r;
+                        requestPermissions(new String[]{android.Manifest.permission.CAMERA}, 7);
+                    }
+                });
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override public void onReceivedError(WebView v, WebResourceRequest r, WebResourceError e) {
                 if (r.isForMainFrame()) goOffline();
@@ -110,6 +132,35 @@ public class MainActivity extends Activity {
         web.loadUrl(URL);
         speaker = new AudioClient();       // idles until the laptop turns tablet-speaker mode on
         speaker.start();
+    }
+
+    @Override public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        if (code != 7 || pendingCam == null) return;
+        if (res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED)
+            pendingCam.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+        else pendingCam.deny();
+        pendingCam = null;
+    }
+
+    /** Study mode: speak through Android's own voice, loud. */
+    void say(String text) {
+        if (tts == null) {
+            tts = new TextToSpeech(this, st -> { if (st == TextToSpeech.SUCCESS) { tts.setSpeechRate(1.05f); tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "cc"); } });
+            return;
+        }
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "cc");
+    }
+
+    /** Alarm on: media volume to max (remembering the old level). Off: restore it. */
+    void alarm(boolean on) {
+        AudioManager am = (AudioManager) getSystemService(AUDIO_SERVICE);
+        if (on && savedVolume < 0) {
+            savedVolume = am.getStreamVolume(AudioManager.STREAM_MUSIC);
+            am.setStreamVolume(AudioManager.STREAM_MUSIC, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+        } else if (!on && savedVolume >= 0) {
+            am.setStreamVolume(AudioManager.STREAM_MUSIC, savedVolume, 0);
+            savedVolume = -1;
+        }
     }
 
     void goOffline() { showClock(); }
@@ -225,7 +276,7 @@ public class MainActivity extends Activity {
         return true;
     }
 
-    @Override protected void onDestroy() { stopDisplay(); if (speaker != null) speaker.shutdown(); super.onDestroy(); }
+    @Override protected void onDestroy() { stopDisplay(); alarm(false); if (tts != null) tts.shutdown(); if (speaker != null) speaker.shutdown(); super.onDestroy(); }
 
     // ------------------------------------------------------------- JS bridge (window.CC)
     class Bridge {
@@ -233,7 +284,9 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean isDisplay() { return displayOn; }
         @JavascriptInterface public void androidSettings() { ui.post(() -> startActivity(new Intent(Settings.ACTION_SETTINGS))); }
         @JavascriptInterface public void reload() { ui.post(() -> web.loadUrl(URL)); }
-        @JavascriptInterface public String version() { return "1.1"; }
+        @JavascriptInterface public String version() { return "1.2"; }
+        @JavascriptInterface public void say(String t) { ui.post(() -> MainActivity.this.say(t)); }
+        @JavascriptInterface public void alarm(boolean on) { ui.post(() -> MainActivity.this.alarm(on)); }
         @JavascriptInterface public void laptopGone() { ui.post(MainActivity.this::showClock); }
     }
 }

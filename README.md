@@ -23,6 +23,8 @@ Claude Code. All over one USB cable, no Wi-Fi, and it starts by itself when you 
 | **Tools** | Tablet as a **trackpad** (tap, right-click, 2-finger scroll, drag), a full **keyboard** (+ type with the tablet's own keyboard, swipe & voice), a **gamepad** (WASD mapping, or a virtual Xbox pad with ViGEmBus), and a **signature pad**: sign with your finger → transparent PNG saved and copied, just Ctrl+V into Word, a PDF or an email. |
 | **Themes** | Restyle the whole tablet with one CSS file. 5 built in (Daylight, Terminal, Neon, Paper, Frosted), upload your own. See [THEMING.md](THEMING.md). |
 | **History graphs** | CPU / GPU / RAM over the last 5 or 30 minutes. |
+| **Study sessions** | Focus / break timer on the tablet (25–90 min). During focus, pick up your phone for ~10 s and the tablet **shouts at you**: red screen, siren, max volume, voice. Breaks = phone allowed. Also catches reel sites on the PC. Tracks focus time, sessions and how often you got caught. |
+| **Away lock** | Locks the PC only after you've been gone longer than your threshold (5–30 min): camera sees nobody *and* no keyboard/mouse. Claude keeps working while locked. |
 
 ### Themes
 | Daylight | Terminal | Neon |
@@ -56,6 +58,8 @@ shortcut plus auto-start. It *asks* before anything optional (ffmpeg, mic suppor
   (signed by Parsec). Without it, second-screen mode mirrors your main screen.
 - **Tablet as a Windows mic:** [VB-CABLE](https://vb-audio.com/Cable/) (free).
 - **Discord buttons:** in Discord › Settings › Keybinds set *Toggle Mute* = `Ctrl+Shift+Alt+M` and *Toggle Deafen* = `Ctrl+Shift+Alt+D`.
+- **Camera features** (study phone watch, away lock): `command-center\get-vision.ps1` downloads Google's MediaPipe and
+  three models (~22 MB, checksum-verified). Everything runs on the tablet; no image is saved or sent anywhere.
 - **Debloat a Lenovo tablet:** `tablet-app\debloat.ps1` (reversible; review the list first, it's tuned for Lenovo).
 
 ## How it works

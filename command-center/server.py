@@ -46,7 +46,15 @@ DEFAULT_SETTINGS = {
     "display_mirror": False,   # second screen: False = extend (new screen), True = mirror the laptop
     "tab_speaker": False,      # play the laptop's sound on the tablet speakers
     "speaker_mute_laptop": True,
+    # camera features: the tablet's front camera + MediaPipe, all on the tablet (no images leave it)
+    "study_focus_min": 25,     # study sessions: focus / break lengths (phone watch only during focus)
+    "study_break_min": 5,
+    "study_laptop": True,      # also shout when a reel site is the front window on the PC
+    "study_words": ["reels", "shorts", "tiktok", "instagram"],
+    "away_lock_min": 0,        # lock the PC after you've been away this long (0 = never)
 }
+AWAY_CHOICES = (0, 5, 10, 15, 30, 60)
+FOCUS_CHOICES, BREAK_CHOICES = (15, 25, 30, 45, 50, 60, 90), (0, 5, 10, 15, 20)
 DISPLAY = None
 SPEAKER = None
 NOW_PLAYING = None
@@ -126,6 +134,16 @@ def update_settings(patch):
             v = min(255, max(5, int(v)))
         elif k == "mic_source" and v not in MIC_SOURCES:
             continue
+        elif k == "away_lock_min":
+            v = int(v) if int(v) in AWAY_CHOICES else 15
+        elif k == "study_focus_min":
+            v = int(v) if int(v) in FOCUS_CHOICES else 25
+        elif k == "study_break_min":
+            v = int(v) if int(v) in BREAK_CHOICES else 5
+        elif k == "study_words":
+            v = [str(w).strip().lower()[:40] for w in (v or []) if str(w).strip()][:20]
+        elif k == "study_laptop":
+            v = bool(v)
         s[k] = v
     settings = s
     SETTINGS_FILE.write_text(json.dumps(s, indent=1), encoding="utf-8")
@@ -610,6 +628,273 @@ def do_action(name):
     return True
 
 
+def launch_app(key):
+    """Open one of the home-screen apps / websites on the PC. Returns the app or None."""
+    for a in load_apps() or []:
+        if akey(a) == key:
+            if "url" in a:
+                os.startfile(a["url"])       # opens in the default browser
+            else:
+                subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{a['appid']}"], creationflags=NO_WINDOW)
+            return a
+    return None
+
+
+# ------------------------------------------------------------------ study sessions + camera
+# The tablet does all the seeing (MediaPipe in its WebView). The PC only gets tiny events:
+# /presence {present} and /study {event}. No images ever leave the tablet.
+STUDY_FILE = ROOT / "study.json"
+presence = {"seen": 0.0, "present": True, "away_since": None, "locked": False}
+study = {"phase": None, "ends": 0.0, "paused_left": None, "round": 0, "mark": 0.0,
+         "session_focus": 0.0, "session_caught": 0, "started": 0.0}
+study_lock = threading.RLock()
+SESSION_FILE = ROOT / "study-session.json"     # a running session survives a server restart / reboot
+try:
+    _saved = json.loads(SESSION_FILE.read_text(encoding="utf-8"))
+    if _saved.get("phase") and time.time() - _saved.get("saved", 0) < 6 * 3600:
+        study.update({k: _saved[k] for k in study if k in _saved}, mark=time.time() if _saved.get("mark") else 0.0)
+except (OSError, json.JSONDecodeError, TypeError):
+    pass
+
+
+def idle_seconds():
+    """Seconds since the last keyboard / mouse input on the PC."""
+    class LII(Structure):
+        _fields_ = [("cbSize", c_uint), ("dwTime", c_uint)]
+    li = LII(8, 0)
+    ctypes.windll.user32.GetLastInputInfo(byref(li))
+    ctypes.windll.kernel32.GetTickCount.restype = c_uint
+    return ((ctypes.windll.kernel32.GetTickCount() - li.dwTime) & 0xFFFFFFFF) / 1000
+
+
+def set_presence(present, gone_for=0):
+    now = time.time()
+    presence["seen"] = now
+    if present:
+        presence.update(present=True, away_since=None, locked=False)
+    elif presence["present"]:
+        presence.update(present=False, away_since=now - min(float(gone_for or 0), 600))
+
+
+def away_watch():
+    """Locks the PC only when the camera has seen nobody AND nobody touched the PC for the whole threshold."""
+    while True:
+        time.sleep(15)
+        mins = settings.get("away_lock_min") or 0
+        p = presence
+        if not mins or p["present"] or p["locked"] or not p["away_since"] or time.time() - p["seen"] > 90:
+            continue          # off, someone's there, already locked, or the tablet camera isn't reporting
+        gone = min(time.time() - p["away_since"], idle_seconds())
+        if gone >= mins * 60:
+            p["locked"] = True
+            ctypes.windll.user32.LockWorkStation()
+            add_note("PC locked", f"You were away for {mins} min. Claude and your apps keep running.", "info")
+
+
+def _study_log():
+    try:
+        return json.loads(STUDY_FILE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _study_add(**inc):
+    log = _study_log()
+    day = log.setdefault(time.strftime("%Y-%m-%d"), {})
+    for k, v in inc.items():
+        day[k] = round(day.get(k, 0) + v, 1)
+    STUDY_FILE.write_text(json.dumps(dict(sorted(log.items())[-60:]), indent=1), encoding="utf-8")  # 2 months
+
+
+def _focusing():
+    return study["phase"] == "focus" and study["paused_left"] is None
+
+
+def _flush_focus():
+    """Adds the focus time since the last mark to today's log."""
+    if _focusing() and study["mark"]:
+        now = time.time()
+        dt, study["mark"] = now - study["mark"], now
+        study["session_focus"] += dt
+        _study_add(focus_s=dt)
+
+
+def study_stats(event=None):
+    today = _study_log().get(time.strftime("%Y-%m-%d"), {})
+    live = time.time() - study["mark"] if _focusing() and study["mark"] else 0
+    return {"phase": study["phase"], "ends": study["ends"], "paused_left": study["paused_left"],
+            "round": study["round"], "now": time.time(), "event": event,
+            "focus_min": settings.get("study_focus_min", 25), "break_min": settings.get("study_break_min", 5),
+            "session_focus": round(study["session_focus"] + live), "session_caught": study["session_caught"],
+            "today": {"focus_s": round(today.get("focus_s", 0) + live), "sessions": today.get("sessions", 0),
+                      "caught": today.get("phone", 0) + today.get("laptop", 0)}}
+
+
+def _phase(name, now):
+    mins = settings.get("study_focus_min", 25) if name == "focus" else settings.get("study_break_min", 5)
+    study.update(phase=name, ends=now + mins * 60, paused_left=None, mark=now if name == "focus" else 0.0)
+    if name == "focus":
+        study["round"] += 1
+
+
+def study_control(event, d=None):
+    """start / pause / resume / skip / stop / caught. Returns the new state (also broadcast to the tablet)."""
+    d = d or {}
+    with study_lock:
+        now = time.time()
+        if event == "start":
+            patch = {k: d[k] for k in ("study_focus_min", "study_break_min") if k in d}
+            if patch:
+                update_settings(patch)
+            study.update(round=0, session_focus=0.0, session_caught=0, started=now)
+            _phase("focus", now)
+            _study_add(sessions=1)
+        elif not study["phase"]:
+            return study_stats()
+        elif event == "pause" and study["paused_left"] is None:
+            _flush_focus()
+            study["paused_left"] = max(0.0, study["ends"] - now)
+        elif event == "resume" and study["paused_left"] is not None:
+            study.update(ends=now + study["paused_left"], paused_left=None, mark=now if study["phase"] == "focus" else 0.0)
+        elif event in ("skip", "next"):
+            _flush_focus()
+            if study["phase"] == "focus" and settings.get("study_break_min", 5):
+                _phase("break", now)
+                event = "break"
+            else:
+                _phase("focus", now)
+                event = "focus"
+        elif event == "stop":
+            _flush_focus()
+            mins, caught = round(study["session_focus"] / 60), study["session_caught"]
+            study.update(phase=None, ends=0.0, paused_left=None, mark=0.0)
+            add_note("Study session done", f"{mins} min focused" + (f", caught {caught}× with reels" if caught else
+                                                                    ", no reels at all. Nice."), "done")
+        elif event == "caught":
+            if not _focusing():
+                return study_stats()
+            study["session_caught"] += 1
+            _study_add(**{"laptop" if d.get("where") == "laptop" else "phone": 1})
+        st = study_stats(event)
+        try:
+            SESSION_FILE.write_text(json.dumps({**study, "saved": time.time()}), encoding="utf-8")
+        except OSError:
+            pass
+    broadcast("study", st)
+    return st
+
+
+# ---- the laptop shouts too: siren (winsound) + Windows' own voice (System.Speech), louder while it lasts
+pc_alarm = {"until": 0.0, "vol": None, "voice": None}
+SIREN = ROOT / "siren.wav"
+
+
+def _siren_file():
+    if not SIREN.exists():                 # 1 s rising siren, generated once (no sound files in the repo)
+        import math
+        import struct
+        import wave
+        rate, frames = 22050, []
+        for i in range(rate):
+            t = i / rate
+            f = 700 + 600 * ((t * 4) % 1)
+            frames.append(int(14000 * math.sin(2 * math.pi * f * t) * min(1, (1 - t) * 20)))
+        with wave.open(str(SIREN), "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(rate)
+            w.writeframes(struct.pack(f"<{len(frames)}h", *frames))
+    return str(SIREN)
+
+
+def _speak(text):
+    with study_lock:
+        _speak_locked(text)
+
+
+def _speak_locked(text):
+    v = pc_alarm["voice"]
+    if not v or v.poll() is not None:
+        v = pc_alarm["voice"] = subprocess.Popen(
+            ["powershell", "-NoProfile", "-Command",
+             "Add-Type -AssemblyName System.Speech; $s=New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+             "$s.Volume=100; while(($l=[Console]::In.ReadLine()) -ne $null){ if($l){ $s.Speak($l) } }"],
+            stdin=subprocess.PIPE, creationflags=NO_WINDOW, text=True)
+    try:
+        v.stdin.write(" ".join(text.splitlines()) + "\n")
+        v.stdin.flush()
+    except OSError:
+        pass
+
+
+def pc_shout(text):
+    import audio
+    import winsound
+    with study_lock:
+        if pc_alarm["vol"] is None:
+            try:
+                pc_alarm["vol"] = audio.get_volume()
+                audio.set_mute(False)
+                audio.set_volume(max(0.8, pc_alarm["vol"][0]))
+            except OSError:
+                pc_alarm["vol"] = (None, None)
+        pc_alarm["until"] = time.time() + 15
+    winsound.PlaySound(_siren_file(), winsound.SND_FILENAME | winsound.SND_ASYNC)
+    if text:
+        threading.Timer(1.1, _speak, args=(str(text)[:200],)).start()
+
+
+def pc_alarm_off(text=""):
+    import audio
+    with study_lock:
+        vol, pc_alarm["vol"], pc_alarm["until"] = pc_alarm["vol"], None, 0.0
+    if text:
+        _speak(text)
+    if vol and vol[0] is not None:
+        audio.set_volume(vol[0])
+        audio.set_mute(vol[1])
+    v = pc_alarm["voice"]
+    if v and v.poll() is None:
+        threading.Timer(4, lambda: v.poll() is None and v.kill()).start()   # let the last line finish
+
+
+def study_watch():
+    """Study timer (focus -> break -> focus...) plus the laptop side of the phone watch: during focus, a reel
+    site / app in the front window makes the tablet shout. Idle (one sleep a second) when no session runs."""
+    import re
+    buf = ctypes.create_unicode_buffer(512)
+    hits, last, flushed, tick = 0, 0.0, time.time(), 0
+    while True:
+        time.sleep(1)
+        if pc_alarm["vol"] is not None and time.time() > pc_alarm["until"]:
+            pc_alarm_off()                           # the tablet stopped shouting (or vanished): restore volume
+        if not study["phase"]:
+            hits = 0
+            continue
+        now = time.time()
+        if study["paused_left"] is None and now >= study["ends"]:
+            study_control("next")
+        with study_lock:
+            if now - flushed > 60:
+                flushed = now
+                _flush_focus()
+        tick += 1
+        if tick % 3 or not (_focusing() and settings.get("study_laptop")):
+            if not _focusing():
+                hits = 0
+            continue
+        u = ctypes.windll.user32
+        u.GetWindowTextW(u.GetForegroundWindow(), buf, 512)
+        title = buf.value.lower()
+        word = next((w for w in settings.get("study_words", []) if re.search(rf"\b{re.escape(w)}\b", title)), None)
+        hits = hits + 1 if word else 0
+        if hits == 2:                                  # ~6 s on it: count it once per episode
+            study_control("caught", {"where": "laptop"})
+        if hits >= 2 and now - last > 15:              # and keep shouting every 15 s until it's gone
+            last = now
+            broadcast("study_alarm", {"where": "laptop", "what": word})
+
+
 claude_asks = {}   # id -> {"info": {...}, "event": threading.Event(), "decision": None}
 
 
@@ -669,7 +954,8 @@ def add_note(title, body="", level="info"):
 
 
 # ------------------------------------------------------------------ http
-TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
+TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".mjs": "text/javascript",
+         ".wasm": "application/wasm", ".css": "text/css",
          ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png"}
 
 
@@ -729,7 +1015,8 @@ class Handler(BaseHTTPRequestHandler):
                                                "latency_ms": DISPLAY and DISPLAY.latency_ms,
                                                "driver": display_driver_installed()},
                                    "speaker": {"active": bool(SPEAKER and SPEAKER.active)},
-                                   "claude_asks": list(claude_asks)})
+                                   "claude_asks": list(claude_asks),
+                                   "presence": {**presence, "idle_s": round(idle_seconds())}})
         if path == "/startapps":
             mine = {a.get("appid") for a in load_apps() or []}
             return self.send(200, [{"name": a["name"], "appid": a["appid"]}
@@ -741,7 +1028,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, b"")
         f = (WEB / (path.lstrip("/") or "index.html")).resolve()
         if WEB in f.parents and f.is_file():
-            return self.send(200, f.read_bytes(), TYPES.get(f.suffix, "application/octet-stream"))
+            return self.send(200, f.read_bytes(), TYPES.get(f.suffix, "application/octet-stream"),
+                             cache="vision" in f.parts)    # the ~20 MB AI models: let the tablet cache them
         self.send(404, b"not found", "text/plain")
 
     def do_POST(self):
@@ -751,15 +1039,37 @@ class Handler(BaseHTTPRequestHandler):
             ok = do_action(d.get("name"))
             return self.send(200 if ok else 400, {"ok": ok})
         if p == "/launch":
-            for a in load_apps() or []:
-                if akey(a) == d.get("id"):
-                    if "url" in a:
-                        os.startfile(a["url"])       # opens in the default browser
-                    else:
-                        subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{a['appid']}"],
-                                         creationflags=NO_WINDOW)
-                    return self.send(200, {"ok": True})
-            return self.send(404, {"ok": False})
+            ok = bool(launch_app(d.get("id")))
+            return self.send(200 if ok else 404, {"ok": ok})
+        if p == "/presence":              # the tablet camera: someone at the desk or not
+            set_presence(bool(d.get("present")), d.get("for", 0))
+            return self.send(200, {"ok": True})
+        if p == "/vdebug":                # ask the tablet for one annotated camera frame (troubleshooting only)
+            broadcast("vdebug", {})
+            return self.send(200, {"ok": True})
+        if p == "/vsnap":                 # ...and it arrives here: saved locally, never sent anywhere
+            import base64
+            jpg = str(d.get("jpg", ""))
+            if jpg.startswith("data:image/jpeg;base64,"):
+                (ROOT / "vision-debug.jpg").write_bytes(base64.b64decode(jpg.split(",", 1)[1]))
+            return self.send(200, {"ok": True})
+        if p == "/vlog":                  # camera diagnostics from the tablet (timings, errors) -> vision.log
+            f = ROOT / "vision.log"
+            if not f.exists() or f.stat().st_size < 200_000:
+                with f.open("a", encoding="utf-8") as fh:
+                    fh.write(time.strftime("%H:%M:%S ") + str(d.get("m", ""))[:500] + "\n")
+            return self.send(200, {"ok": True})
+        if p == "/study":                 # the tablet caught a phone in your hand
+            if d.get("event") == "shout":     # the tablet is shouting: the laptop joins in
+                threading.Thread(target=pc_shout, args=(d.get("text", ""),), daemon=True).start()
+                return self.send(200, {"ok": True})
+            if d.get("event") == "alarm_off":
+                threading.Thread(target=pc_alarm_off, args=(d.get("text", ""),), daemon=True).start()
+                return self.send(200, {"ok": True})
+            if d.get("event") == "test":      # settings app: "Test the alarm" (not counted)
+                broadcast("study_alarm", {"where": "phone", "test": True})
+                return self.send(200, {"ok": True})
+            return self.send(200, study_control(d.get("event"), d) if d.get("event") else study_stats())
         if p == "/apps/add":
             apps = load_apps() or []
             if d.get("appid") and all(a.get("appid") != d["appid"] for a in apps):
@@ -885,7 +1195,7 @@ class Handler(BaseHTTPRequestHandler):
                  "version": web_version,   # the tablet reloads itself when the dashboard files changed
                  "asks": [a["info"] for a in claude_asks.values()],
                  "np": NOW_PLAYING.state if NOW_PLAYING else None, "discord": state.get("discord", False),
-                 "hist": list(HISTORY)[::2]}   # every 2nd point is plenty for the graph
+                 "hist": list(HISTORY)[::2], "study": study_stats()}   # every 2nd point is plenty for the graph
         try:
             self.wfile.write(f"event: hello\ndata: {json.dumps(hello)}\n\n".encode())
             self.wfile.flush()
@@ -909,6 +1219,8 @@ if __name__ == "__main__":
     threading.Thread(target=stats_loop, daemon=True).start()
     threading.Thread(target=tablet_watch, daemon=True).start()
     threading.Thread(target=discord_watch, daemon=True).start()
+    threading.Thread(target=away_watch, daemon=True).start()
+    threading.Thread(target=study_watch, daemon=True).start()
 
     def _display_changed(on):
         state["display"] = on

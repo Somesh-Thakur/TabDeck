@@ -27,3 +27,10 @@ __pycache__/
 .vscode/
 .idea/
 .claude/
+
+command-center/web/vision/
+command-center/study.json
+command-center/vision.log
+command-center/vision-debug.jpg
+command-center/siren.wav
+command-center/study-session.json

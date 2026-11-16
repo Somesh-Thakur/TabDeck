@@ -70,6 +70,10 @@ if (-not (Test-Path $apk)) {
     $apk = "$Tools\TabDeck.apk"; Fetch $a.browser_download_url $apk
 }
 & $adb install -r $apk
+if (Ask 'Camera features: study-mode phone watch + away lock? (downloads Google MediaPipe + models, ~22 MB, runs on the tablet)') {
+    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $CC 'get-vision.ps1')
+    & $adb shell pm grant dev.somesh.commandcenter android.permission.CAMERA
+}
 if (Ask 'Make TabDeck the tablet''s home screen (it boots straight into the dashboard)?') {
     & $adb shell cmd package set-home-activity dev.somesh.commandcenter/.MainActivity
 }

@@ -67,6 +67,25 @@ Dock button **Tools** (or `POST /tools {"tab":"sign"}` to open one remotely, `nu
 - Signature: `POST /signature {png}` saves to `Pictures\TabDeck Signatures\` and puts it on the clipboard as PNG
   (transparent) + bitmap on white (`sig-clipboard.ps1`).
 
+## Study sessions + camera (`web/study.js`, `web/vision.js`, `get-vision.ps1`)
+- **Sessions:** the server keeps the timer (`study` dict, `study_watch` ticks once a second only while a session runs):
+  focus → break → focus…, lengths from `study_focus_min` / `study_break_min`. `POST /study {event}` with
+  `start | pause | resume | skip | stop | caught | test`; `{}` returns the state. Focus seconds, sessions and catches are
+  logged per day in `study.json` (2 months kept). The tablet draws it (`study.js`): open with the status pill.
+- **Phone watch (focus only):** Google MediaPipe Tasks Vision 0.10.14 in the tablet WebView. Every 3 s: the hand
+  landmarker (GPU) finds your hands, then EfficientDet-Lite0 looks for a "cell phone" in a zoomed 320 px crop around
+  them (a phone held up is small, at the frame edge and seen from the back: 0.16 whole-frame vs 0.25–0.68 zoomed).
+  The detector runs on the **CPU**: it is int8, and the tablet's GPU path returned garbage for it. Score ≥ 0.18 in 3 of
+  the last 6 checks → red screen, Android TTS at max media volume, siren, `caught` logged; the laptop joins in
+  (`/study {event:"shout"}`: winsound siren + System.Speech voice, volume raised to ≥ 80 % and restored).
+  "I really need it" snoozes 2 min. Laptop side: the front window title is checked every 3 s for `study_words`.
+  Troubleshooting: `POST /vdebug` saves one annotated frame to `vision-debug.jpg` (local only, gitignored).
+- **Away lock:** BlazeFace every 2 s; no face for 30 s → `POST /presence {present:false}`. `away_watch` locks only when
+  away **and** `GetLastInputInfo` idle both exceed `away_lock_min`, and only while the tablet keeps reporting.
+- The camera is on only during focus time or while away lock is on (green dot in the pill). `get-vision.ps1` downloads
+  the library + models into `web/vision/` (gitignored, hashes pinned). Measured on the Helio P22: phone ≈ 580 ms,
+  hand ≈ 250 ms, face ≈ 70–150 ms per check. Diagnostics go to `vision.log`.
+
 ## Themes
 CSS files in `themes/` (built-ins) plus uploads saved as `themes/user-*.css`. Endpoints: `GET /themes`,
 `GET /themes/<file>`, `POST /themes/upload {name, css}`, `POST /themes/apply {file}`, `POST /themes/delete {file}`.

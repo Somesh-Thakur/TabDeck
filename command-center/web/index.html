@@ -290,6 +290,7 @@ button:active{transform:scale(.9)}
   background:rgba(255,55,95,.9);display:none}
 </style>
 <link rel="stylesheet" href="tools.css">
+<link rel="stylesheet" href="vision.css">
 <style id="userVars"></style>
 <link id="themeCss" rel="stylesheet" disabled>
 </head>
@@ -300,6 +301,7 @@ button:active{transform:scale(.9)}
   <header>
     <div class="when"><div class="date" id="date">&nbsp;</div><div class="time" id="time">--:--</div></div>
     <div class="status">
+      <div class="pill vpill" id="vPill" style="display:none"><i class="cam"></i><span id="vTxt"></span></div>
       <div class="pill"><i class="dot" id="link"></i>Laptop <b id="lapPct">–</b><div class="batt" id="lapBat"><i></i></div></div>
       <div class="pill">Tab <b id="tabPct">–</b><div class="batt" id="tabBat"><i></i></div></div>
       <button class="pill bell" id="bellBtn"><svg class="ic"><use href="#i-bell"/></svg><span class="badge" id="badge"></span></button>
@@ -389,6 +391,8 @@ button:active{transform:scale(.9)}
 
 <nav class="dock" id="dock"></nav>
 
+<div class="valarm" id="vAlarm"><svg class="ico" viewBox="0 0 24 24" width="120" height="120" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3M3 3l18 18"/></svg>
+  <h2></h2><p></p><button id="vSnooze">I really need it · 2 min</button></div>
 <div class="banner" id="banner"><div class="gl" id="bGl"></div><div class="tx"><b><span id="bT"></span><em>now</em></b><p id="bB"></p></div></div>
 <div class="ask" id="ask">
   <div class="top"><div class="gl g-claude"><svg class="ic"><use href="#i-sparkle"/></svg></div>
@@ -443,14 +447,17 @@ function applySettings(s){
     el.style.display=w.on?'':'none';el.style.order=i;if(w.on)shown++;});
   document.querySelector('.screen').classList.toggle('nowidgets',!shown);
   $('dock').innerHTML=(s.dock||[]).filter(a=>DOCK_ACTIONS[a]).map(a=>{const d=DOCK_ACTIONS[a];
-    const tog=a==='speaker'?` toggle${s.tab_speaker?' on':''}`:a==='mic'?` toggle${mic.on?' on':''}`:'';
+    const on={speaker:s.tab_speaker,mic:mic.on,study:!!(window.ccStudy||{}).phase};
+    const tog=a in on?` toggle${on[a]?' on':''}`:'';
     return `<button class="dk ${d.g}${tog}" data-act="${a}" title="${d.label}"><svg class="ic${d.fill?' fill':''}"><use href="#${d.icon}"/></svg></button>`;}).join('');
   $('dock').insertAdjacentHTML('beforeend',`<div class="dc${discordOn?' on':''}" id="dc"><i class="sep"></i>
     <button class="dk g-discord" data-act="discord_mute" title="Discord: mute"><svg class="ic"><use href="#i-micoff"/></svg></button>
     <button class="dk g-discord" data-act="discord_deafen" title="Discord: deafen"><svg class="ic"><use href="#i-headphones"/></svg></button></div>`);
   $('dock').style.display=s.dock?.length||discordOn?'':'none';
   clock();
+  window.Vision&&Vision.update();window.Study&&Study.render();
 }
+window.ccGetS=()=>S;window.ccChime=()=>chime();window.ccApps=()=>apps;window.ccBanner=n=>banner(n);
 const post=(u,b)=>fetch(u,{method:'POST',body:JSON.stringify(b||{})}).then(r=>r.json()).catch(()=>null);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -475,6 +482,7 @@ function chime(){ if(!ac||!S.sound||PREVIEW)return; const vol=S.volume/0.6; cons
 /* actions */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;
   if(b.dataset.act==='speaker'){post('settings',{tab_speaker:!S.tab_speaker});return;}
+  if(b.dataset.act==='study'){window.Study&&Study.open();return;}
   if(b.dataset.act==='tools'){window.Tools&&Tools.open();return;}
   if(b.dataset.act==='mic'){$('micBtn').click();return;}
   if(b.dataset.act==='display'){if(APP)CC.setDisplay(true);else banner({title:'Second screen',body:'Install the Command Center app on the tab to use this.',level:'warn'});return;}
@@ -626,7 +634,7 @@ $('askNo').onclick=()=>answerAsk('deny');
 /* sheets */
 function openSheet(id){$(id).classList.add('show');$('scrim').classList.add('show');
   if(id==='noteSheet'){unread=0;badge();renderNotes();} if(id==='addSheet')loadStart();}
-window.ccBack=()=>{if(window.Tools&&Tools.isOpen())Tools.close();else if(document.querySelector('.sheet.show'))closeSheets();else if(editing)setEdit(false);};
+window.ccBack=()=>{if(window.Study&&Study.isOpen())Study.close();else if(window.Tools&&Tools.isOpen())Tools.close();else if(document.querySelector('.sheet.show'))closeSheets();else if(editing)setEdit(false);};
 window.ccDisplay=on=>post('display_state',{on});
 function closeSheets(){document.querySelectorAll('.sheet.show').forEach(s=>s.classList.remove('show'));$('scrim').classList.remove('show');document.activeElement?.blur();}
 $('scrim').onclick=closeSheets;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheets);
@@ -692,7 +700,7 @@ function connect(){
   es.addEventListener('hello',e=>{const h=JSON.parse(e.data);
     if(window.ccVersion&&h.version&&h.version!==window.ccVersion){location.reload();return;}
     window.ccVersion=h.version;mic=h.mic;micUi();notes=h.notes;renderNotes();applySettings(h.settings);asks=[];(h.asks||[]).forEach(addAsk);showAsk();npState=h.np;npRender();setDiscord(h.discord);
-    if(h.hist)HIST=h.hist.slice();histDraw();});
+    if(h.hist)HIST=h.hist.slice();histDraw();window.ccStudy=h.study;window.Study&&Study.set(h.study);});
   es.addEventListener('settings',e=>applySettings(JSON.parse(e.data)));
   es.addEventListener('claude_ask',e=>addAsk(JSON.parse(e.data)));
   es.addEventListener('np',e=>{npState=JSON.parse(e.data);npRender();});
@@ -701,6 +709,9 @@ function connect(){
   es.addEventListener('claude_ask_done',e=>{const id=JSON.parse(e.data).id;asks=asks.filter(a=>a.id!==id);showAsk();});
   es.addEventListener('mode',e=>{if(APP)CC.setDisplay(JSON.parse(e.data)==='display');});
   es.addEventListener('apps',e=>{apps=JSON.parse(e.data);renderApps();});
+  es.addEventListener('study',e=>{window.ccStudy=JSON.parse(e.data);window.Study&&Study.set(window.ccStudy);applySettings(S);});
+  es.addEventListener('vdebug',()=>window.Vision&&Vision.debug());
+  es.addEventListener('study_alarm',e=>window.Vision&&Vision.laptopAlarm(JSON.parse(e.data)));
   es.addEventListener('mic',e=>{mic=JSON.parse(e.data);micUi();});
   es.addEventListener('note',e=>{const n=JSON.parse(e.data);notes.unshift(n);notes=notes.slice(0,30);
     if(!$('noteSheet').classList.contains('show')){unread++;badge();}renderNotes();banner(n);});
@@ -710,5 +721,7 @@ async function wake(){if(PREVIEW)return;try{await navigator.wakeLock?.request('s
 document.addEventListener('visibilitychange',()=>document.visibilityState==='visible'&&wake());wake();
 </script>
 <script src="tools.js"></script>
+<script src="study.js"></script>
+<script type="module" src="vision.js"></script>
 </body>
 </html>

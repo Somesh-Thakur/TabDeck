@@ -1,0 +1,74 @@
+/* study sessions + camera: status pill, study screen, phone alarm. Themes may override all of it. */
+.vcam{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+
+.pill.vpill{gap:7px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer}
+.vpill .cam{width:8px;height:8px;border-radius:50%;background:#636366;flex:none}
+.vpill.live .cam{background:#30d158;box-shadow:0 0 0 3px rgba(48,209,88,.22)}
+.vpill.studying{background:rgba(255,159,10,.16);color:#ffb340}
+
+/* ---------- study screen */
+.study{position:fixed;inset:0;z-index:35;display:flex;flex-direction:column;padding:26px 40px 34px;color:#fff;
+  --ph:#ff9f0a;background:radial-gradient(1200px 700px at 28% 45%,color-mix(in srgb,var(--ph) 16%,#000) 0,#050506 70%);
+  opacity:0;transform:translateY(24px) scale(.985);pointer-events:none;transition:opacity .3s,transform .45s cubic-bezier(.2,.9,.3,1.1)}
+.study.show{opacity:1;transform:none;pointer-events:auto}
+.study[data-phase=break]{--ph:#30d158}
+.study[data-phase=idle]{--ph:#0a84ff}
+.study.paused{--ph:#8e8e93}
+.study header{display:flex;align-items:center;justify-content:space-between}
+.st-title{display:flex;align-items:center;gap:10px;font-size:26px;font-weight:700;letter-spacing:-.4px}
+.st-title .ic{width:26px;height:26px;color:var(--ph)}
+.st-x{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.09);display:grid;place-items:center}
+.st-x .ic{width:22px;height:22px}
+.st-main{flex:1;display:flex;gap:44px;align-items:center;min-height:0}
+.st-left{flex:1;display:flex;flex-direction:column;align-items:center;gap:26px}
+.st-ring{position:relative;width:380px;height:380px}
+.st-ring svg{width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.st-ring circle{fill:none;stroke-width:16;stroke-linecap:round}
+.st-ring .trk{stroke:rgba(255,255,255,.08)}
+.st-ring .val{stroke:var(--ph);transition:stroke-dashoffset 1s linear,stroke .4s;filter:drop-shadow(0 0 14px color-mix(in srgb,var(--ph) 55%,transparent))}
+.st-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.st-ph{font-size:15px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--ph)}
+.st-time{font-size:96px;font-weight:200;letter-spacing:-3px;line-height:1.05;font-variant-numeric:tabular-nums}
+.st-sub{font-size:14px;color:rgba(255,255,255,.55);margin-top:4px}
+.st-setup,.st-ctl{display:none}
+.study[data-phase=idle] .st-setup{display:flex;flex-direction:column;align-items:center;gap:12px}
+.study:not([data-phase=idle]) .st-ctl{display:flex;align-items:center;gap:28px}
+.st-row{display:flex;align-items:center;gap:14px}
+.st-row>span{width:56px;text-align:right;color:rgba(255,255,255,.55);font-size:14px;font-weight:600}
+.st-seg{display:flex;background:rgba(255,255,255,.08);border-radius:12px;padding:3px}
+.st-seg button{padding:8px 16px;border-radius:9px;font-size:14px;font-weight:600;color:rgba(255,255,255,.6)}
+.st-seg button.on{background:rgba(255,255,255,.18);color:#fff}
+.st-go{margin-top:8px;height:54px;padding:0 40px;border-radius:99px;background:var(--ph);color:#fff;font-size:18px;font-weight:700;
+  box-shadow:0 10px 30px color-mix(in srgb,var(--ph) 40%,transparent)}
+.st-b{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.st-b .ic{width:22px;height:22px}
+.st-b span{font-size:11px;font-weight:600;color:rgba(255,255,255,.65)}
+.st-b.big{width:84px;height:84px;background:var(--ph);box-shadow:0 10px 30px color-mix(in srgb,var(--ph) 40%,transparent)}
+.st-b.big .ic{width:32px;height:32px}
+.st-right{width:380px;display:flex;flex-direction:column;gap:14px}
+.st-card{border-radius:22px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 .5px rgba(255,255,255,.08);padding:16px 18px}
+.st-two{display:flex;gap:14px}.st-two .st-card{flex:1}
+.st-k{font-size:13px;font-weight:600;color:rgba(255,255,255,.5)}
+.st-big{font-size:38px;font-weight:600;letter-spacing:-1px;margin-top:2px;font-variant-numeric:tabular-nums}
+.st-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin:10px 0 6px;overflow:hidden}
+.st-bar i{display:block;height:100%;background:var(--ph);border-radius:3px;transition:width .6s}
+.st-s{font-size:12.5px;color:rgba(255,255,255,.5)}
+.st-this p{font-size:15px;line-height:1.45;margin-top:4px;color:rgba(255,255,255,.8)}
+.st-card.watch{display:flex;gap:13px;align-items:center}
+.st-card.watch b{font-size:16px}
+.st-card.watch p{font-size:13px;color:rgba(255,255,255,.55);margin-top:2px}
+.st-dot{width:12px;height:12px;border-radius:50%;background:#48484a;flex:none}
+.watch.on .st-dot{background:#30d158;box-shadow:0 0 0 5px rgba(48,209,88,.2);animation:stp 2s ease-in-out infinite}
+.watch.wait .st-dot{background:#ff9f0a}
+@keyframes stp{50%{box-shadow:0 0 0 9px rgba(48,209,88,.06)}}
+
+/* ---------- phone alarm */
+.valarm{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  background:radial-gradient(circle at 50% 40%,#ff3b30 0,#b3140c 55%,#5c0703 100%);color:#fff;opacity:0;pointer-events:none;transition:opacity .25s}
+.valarm.show{opacity:1;pointer-events:auto;animation:vpulse 1s ease-in-out infinite alternate}
+@keyframes vpulse{to{filter:brightness(1.25)}}
+.valarm .ico{margin-bottom:18px;animation:vshake .5s ease-in-out infinite}
+@keyframes vshake{25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+.valarm h2{font-size:58px;font-weight:800;letter-spacing:-1.5px;text-transform:uppercase}
+.valarm p{font-size:21px;opacity:.85;margin-top:10px}
+.valarm button{margin-top:44px;padding:14px 26px;border-radius:99px;background:rgba(0,0,0,.28);color:#fff;font-size:16px;font-weight:600}

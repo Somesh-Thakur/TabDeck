@@ -31,6 +31,7 @@ const DOCK_ACTIONS = {
   monitor_off: { label: 'Screen Off',      icon: 'i-moon',   g: 'g-indigo' },
   mute:        { label: 'Mute Sound',      icon: 'i-mute',   g: 'g-pink' },
   play:        { label: 'Play / Pause',    icon: 'i-play',   g: 'g-green', fill: true },
+  study:       { label: 'Study Mode',      icon: 'i-book',   g: 'g-orange' },
 };
 
 const WIDGETS = {
