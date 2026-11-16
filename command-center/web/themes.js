@@ -16,6 +16,7 @@ const ACCENTS = { blue: '#0a84ff', purple: '#bf5af2', pink: '#ff375f', orange: '
 
 const DOCK_ACTIONS = {
   display:     { label: 'Second Screen',   icon: 'i-screens', g: 'g-teal' },
+  tools:       { label: 'Tools',           icon: 'i-tools',  g: 'g-indigo' },
   speaker:     { label: 'Tab Speaker',     icon: 'i-volup',  g: 'g-purple' },
   mic:         { label: 'Tab Mic',         icon: 'i-mic',    g: 'g-pink' },
   lock:        { label: 'Lock PC',         icon: 'i-lock',   g: 'g-gray' },

@@ -289,6 +289,7 @@ button:active{transform:scale(.9)}
 .offline{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);padding:9px 16px;border-radius:18px;font-size:14px;font-weight:600;
   background:rgba(255,55,95,.9);display:none}
 </style>
+<link rel="stylesheet" href="tools.css">
 <style id="userVars"></style>
 <link id="themeCss" rel="stylesheet" disabled>
 </head>
@@ -474,6 +475,7 @@ function chime(){ if(!ac||!S.sound||PREVIEW)return; const vol=S.volume/0.6; cons
 /* actions */
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;
   if(b.dataset.act==='speaker'){post('settings',{tab_speaker:!S.tab_speaker});return;}
+  if(b.dataset.act==='tools'){window.Tools&&Tools.open();return;}
   if(b.dataset.act==='mic'){$('micBtn').click();return;}
   if(b.dataset.act==='display'){if(APP)CC.setDisplay(true);else banner({title:'Second screen',body:'Install the Command Center app on the tab to use this.',level:'warn'});return;}
   if(!PREVIEW&&navigator.vibrate)!PREVIEW&&navigator.vibrate(8);post('action',{name:b.dataset.act});
@@ -624,7 +626,7 @@ $('askNo').onclick=()=>answerAsk('deny');
 /* sheets */
 function openSheet(id){$(id).classList.add('show');$('scrim').classList.add('show');
   if(id==='noteSheet'){unread=0;badge();renderNotes();} if(id==='addSheet')loadStart();}
-window.ccBack=()=>{if(document.querySelector('.sheet.show'))closeSheets();else if(editing)setEdit(false);};
+window.ccBack=()=>{if(window.Tools&&Tools.isOpen())Tools.close();else if(document.querySelector('.sheet.show'))closeSheets();else if(editing)setEdit(false);};
 window.ccDisplay=on=>post('display_state',{on});
 function closeSheets(){document.querySelectorAll('.sheet.show').forEach(s=>s.classList.remove('show'));$('scrim').classList.remove('show');document.activeElement?.blur();}
 $('scrim').onclick=closeSheets;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheets);
@@ -695,6 +697,7 @@ function connect(){
   es.addEventListener('claude_ask',e=>addAsk(JSON.parse(e.data)));
   es.addEventListener('np',e=>{npState=JSON.parse(e.data);npRender();});
   es.addEventListener('discord',e=>setDiscord(JSON.parse(e.data)));
+  es.addEventListener('tools',e=>{const t=JSON.parse(e.data);if(!window.Tools)return;t?Tools.open(t):Tools.close();});
   es.addEventListener('claude_ask_done',e=>{const id=JSON.parse(e.data).id;asks=asks.filter(a=>a.id!==id);showAsk();});
   es.addEventListener('mode',e=>{if(APP)CC.setDisplay(JSON.parse(e.data)==='display');});
   es.addEventListener('apps',e=>{apps=JSON.parse(e.data);renderApps();});
@@ -706,5 +709,6 @@ connect();
 async function wake(){if(PREVIEW)return;try{await navigator.wakeLock?.request('screen')}catch{}}
 document.addEventListener('visibilitychange',()=>document.visibilityState==='visible'&&wake());wake();
 </script>
+<script src="tools.js"></script>
 </body>
 </html>

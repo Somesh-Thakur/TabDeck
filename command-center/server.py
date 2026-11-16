@@ -639,6 +639,27 @@ def claude_answer(aid, decision):
     return False
 
 
+def save_signature(data_url):
+    """Signature drawn on the tablet -> Pictures\\TabDeck Signatures\\*.png + clipboard."""
+    import base64
+    if not isinstance(data_url, str) or not data_url.startswith("data:image/png;base64,"):
+        return {"ok": False, "error": "not a PNG"}
+    png = base64.b64decode(data_url.split(",", 1)[1])
+    if len(png) > 8_000_000 or not png.startswith(b"\x89PNG"):
+        return {"ok": False, "error": "bad image"}
+    folder = Path(os.environ.get("USERPROFILE", ROOT)) / "Pictures" / "TabDeck Signatures"
+    folder.mkdir(parents=True, exist_ok=True)
+    f = folder / time.strftime("signature-%Y-%m-%d-%H%M%S.png")
+    f.write_bytes(png)
+    r = subprocess.run(["powershell", "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-File",
+                        str(ROOT / "sig-clipboard.ps1"), "-Path", str(f)],
+                       creationflags=NO_WINDOW, capture_output=True, timeout=30)
+    copied = r.returncode == 0
+    add_note("Signature saved", ("Copied: press Ctrl+V to paste it. " if copied else "") +
+             f"File: Pictures\\TabDeck Signatures\\{f.name}", "done")
+    return {"ok": True, "file": str(f), "copied": copied}
+
+
 def add_note(title, body="", level="info"):
     note = {"id": str(time.time_ns()), "title": str(title)[:120], "body": str(body)[:400],
             "level": level, "time": time.time()}
@@ -814,6 +835,14 @@ class Handler(BaseHTTPRequestHandler):
                     update_settings({"theme": "default", "theme_v": 0})
                 return self.send(200, {"ok": True})
             return self.send(400, {"error": "only uploaded themes can be deleted"})
+        if p == "/input":                 # trackpad / keyboard / gamepad from the tablet
+            import inputs
+            return self.send(200, inputs.handle(d if isinstance(d, list) else d.get("e", [])))
+        if p == "/tools":                 # open (or close, tab=null) a tool on the tablet
+            broadcast("tools", d.get("tab"))
+            return self.send(200, {"ok": True})
+        if p == "/signature":
+            return self.send(200, save_signature(d.get("png", "")))
         if p == "/media/seek":
             return self.send(200, {"ok": bool(NOW_PLAYING and NOW_PLAYING.control("seek", d.get("pos", 0)))})
         if p == "/volume":

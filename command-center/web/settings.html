@@ -206,7 +206,7 @@ code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:
 
     <!-- DOCK -->
     <section id="s-dock">
-      <h1>Dock</h1><p class="lead">Quick actions at the bottom of the tablet. Drag to reorder, hover and press × to remove (max 8).</p>
+      <h1>Dock</h1><p class="lead">Quick actions at the bottom of the tablet. Drag to reorder, hover and press × to remove (max 9).</p>
       <div class="label">IN THE DOCK</div>
       <div class="group"><div class="dockbar" id="dockBar"></div></div>
       <div class="label">ADD AN ACTION</div>
@@ -422,7 +422,7 @@ function renderDock(){
 }
 $('dockBar').addEventListener('click',e=>{const x=e.target.closest('[data-x]');if(x)save({dock:S.dock.filter(a=>a!==x.dataset.x)});});
 $('dockAvail').addEventListener('click',e=>{const r=e.target.closest('[data-add]');if(!r)return;
-  if(S.dock.length>=8)return toast('The dock holds up to 8');save({dock:[...S.dock,r.dataset.add]});});
+  if(S.dock.length>=9)return toast('The dock holds up to 9');save({dock:[...S.dock,r.dataset.add]});});
 
 /* ---------- themes */
 let themes=[];

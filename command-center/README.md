@@ -57,6 +57,16 @@ to the dashboard by itself when the laptop is back.
 Mute / deafen appear in the dock only while Discord runs. One-time setup in Discord › Settings › Keybinds:
 **Toggle Mute = Ctrl+Shift+Alt+M**, **Toggle Deafen = Ctrl+Shift+Alt+D**.
 
+## Tools (trackpad · keyboard · gamepad · sign) — `web/tools.js`, `inputs.py`
+Dock button **Tools** (or `POST /tools {"tab":"sign"}` to open one remotely, `null` to close).
+- Input arrives as batched JSON at `POST /input` (one request per screen frame) and is injected with `SendInput`
+  (scan codes, so games see it; text as Unicode so any language works).
+- Gamepad: keyboard mapping by default (stick = WASD, A = Space, B = Ctrl, X = E, Y = Q, LB/RB = 1/2, LT/RT = R/F,
+  D-pad = arrows, Start = Esc, Back = Tab). If `pip install vgamepad` (+ its ViGEmBus driver) is present it becomes a
+  real virtual Xbox 360 controller with analog stick.
+- Signature: `POST /signature {png}` saves to `Pictures\TabDeck Signatures\` and puts it on the clipboard as PNG
+  (transparent) + bitmap on white (`sig-clipboard.ps1`).
+
 ## Themes
 CSS files in `themes/` (built-ins) plus uploads saved as `themes/user-*.css`. Endpoints: `GET /themes`,
 `GET /themes/<file>`, `POST /themes/upload {name, css}`, `POST /themes/apply {file}`, `POST /themes/delete {file}`.

@@ -20,6 +20,7 @@ Claude Code. All over one USB cable, no Wi-Fi, and it starts by itself when you 
 | **Discord** | Mute / deafen buttons that appear only while Discord is running. |
 | **Night clock** | PC off or asleep → the tablet shows a dim, burn-in-safe clock and wakes up with the PC. |
 | **Desktop app** | Customise everything (apps, widgets, dock, look, sound, brightness…) with a live preview of the tablet. |
+| **Tools** | Tablet as a **trackpad** (tap, right-click, 2-finger scroll, drag), a full **keyboard** (+ type with the tablet's own keyboard, swipe & voice), a **gamepad** (WASD mapping, or a virtual Xbox pad with ViGEmBus), and a **signature pad**: sign with your finger → transparent PNG saved and copied, just Ctrl+V into Word, a PDF or an email. |
 | **Themes** | Restyle the whole tablet with one CSS file. 5 built in (Daylight, Terminal, Neon, Paper, Frosted), upload your own. See [THEMING.md](THEMING.md). |
 | **History graphs** | CPU / GPU / RAM over the last 5 or 30 minutes. |
 

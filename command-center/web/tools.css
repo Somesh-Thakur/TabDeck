@@ -1,0 +1,82 @@
+/* TabDeck tools: trackpad, keyboard, gamepad, signature pad. Uses the theme variables, so themes restyle it too. */
+.tools{position:fixed;inset:0;z-index:35;display:none;flex-direction:column;background:var(--wall-base,#06060a);
+  background-image:var(--wall-img,none);animation:toolsIn .35s var(--ease)}
+.tools.on{display:flex}
+@keyframes toolsIn{from{opacity:0;transform:scale(.98)}}
+.tools::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.35);pointer-events:none}
+.tools>*{position:relative}
+.t-top{display:flex;align-items:center;gap:14px;padding:14px 18px 10px}
+.t-tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);margin:0 auto}
+.t-tabs button{height:40px;padding:0 18px;border-radius:10px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--dim)}
+.t-tabs button .ic{width:19px;height:19px}
+.t-tabs button.on{background:var(--glass-hi);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.t-close{width:44px;height:44px;border-radius:50%;background:var(--glass);display:grid;place-items:center;box-shadow:inset 0 0 0 .5px var(--hair)}
+.t-close .ic{width:20px;height:20px}
+.t-side{width:44px}
+.t-body{flex:1;min-height:0;padding:4px 18px 18px;display:none}
+.t-body.on{display:flex}
+.t-hint{font-size:12.5px;color:var(--faint);text-align:center}
+
+/* ---- trackpad */
+.tp{flex:1;display:flex;flex-direction:column;gap:12px}
+.tp-pad{flex:1;border-radius:26px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);touch-action:none;position:relative;overflow:hidden;
+  background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.5px);background-size:22px 22px}
+.tp-pad .t-hint{position:absolute;left:0;right:0;bottom:16px;pointer-events:none}
+.tp-dot{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:var(--accent);opacity:0;pointer-events:none;
+  transition:opacity .25s;filter:blur(6px)}
+.tp-btns{display:flex;gap:12px;height:88px}
+.tp-btns button{flex:1;border-radius:20px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);font-size:14px;font-weight:600;color:var(--dim);touch-action:none}
+.tp-btns button.down{background:var(--glass-hi);color:var(--text)}
+.tp-sens{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+.tp-sens input{width:120px}
+
+/* ---- keyboard */
+.kb{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
+.kb-type{display:flex;gap:10px}
+.kb-type input{flex:1;height:52px;border-radius:14px;border:0;outline:0;padding:0 16px;font:inherit;font-size:17px;color:var(--text);
+  background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair)}
+.kb-type input:focus{box-shadow:inset 0 0 0 2px var(--accent)}
+.kb-type button{height:52px;padding:0 18px;border-radius:14px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);font-weight:600;font-size:14px}
+.kb-type button.pri{background:var(--accent);color:#fff}
+.kb-keys{flex:1;display:flex;flex-direction:column;gap:7px}
+.kb-row{flex:1;display:flex;gap:7px}
+.kb-row button{flex:1;border-radius:11px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair),0 2px 0 rgba(0,0,0,.35);
+  font-size:17px;font-weight:500;color:var(--text);touch-action:none;transition:transform .06s}
+.kb-row button.mod,.kb-row button.fn{font-size:13px;color:var(--dim);font-weight:600}
+.kb-row button.fn{font-size:12px}
+.kb-row button.down{transform:translateY(2px);background:var(--glass-hi);box-shadow:inset 0 0 0 .5px var(--hair)}
+.kb-row button.latched{background:var(--accent);color:#fff}
+
+/* ---- gamepad */
+.gp{flex:1;position:relative;touch-action:none;user-select:none}
+.gp .el{position:absolute;touch-action:none}
+.gp-btn{border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18),0 6px 16px rgba(0,0,0,.35);transition:transform .06s,filter .06s}
+.gp-btn.down,.gp-sh.down,.gp-d.down,.gp-sm.down{transform:scale(.92);filter:brightness(1.4)}
+.gp-a{background:#2fae5b}.gp-b{background:#d6453d}.gp-x{background:#2f6fd8}.gp-y{background:#e3b52f}
+.gp-sh{border-radius:16px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);display:grid;place-items:center;font-weight:700;color:var(--text);font-size:15px}
+.gp-sm{border-radius:20px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--dim)}
+.gp-stick{border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),rgba(255,255,255,.02));box-shadow:inset 0 0 0 1px var(--hair)}
+.gp-knob{position:absolute;left:50%;top:50%;width:42%;height:42%;margin:-21% 0 0 -21%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#5a5a66,#2a2a32);box-shadow:0 8px 20px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.15)}
+.gp-d{background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);display:grid;place-items:center;color:var(--text)}
+.gp-d .ic{width:26px;height:26px}
+.gp-info{position:absolute;left:50%;transform:translateX(-50%);bottom:6px;text-align:center;font-size:12px;color:var(--faint);line-height:1.5}
+
+/* ---- signature */
+.sg{flex:1;display:flex;flex-direction:column;gap:12px;align-items:center}
+.sg-paper{flex:1;width:100%;max-width:1100px;border-radius:18px;background:#fbfaf7;position:relative;touch-action:none;
+  box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.sg-paper canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:18px}
+.sg-line{position:absolute;left:8%;right:8%;bottom:28%;border-bottom:2px solid #d8d4c8;pointer-events:none}
+.sg-x{position:absolute;left:7%;bottom:calc(28% + 6px);font:600 26px/1 system-ui;color:#bdb8aa;pointer-events:none}
+.sg-ph{position:absolute;inset:0;display:grid;place-items:center;color:#c9c4b6;font-size:18px;pointer-events:none}
+.sg-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center}
+.sg-bar button{height:46px;padding:0 16px;border-radius:13px;background:var(--glass);box-shadow:inset 0 0 0 .5px var(--hair);font-weight:600;font-size:14px;
+  display:flex;align-items:center;gap:7px}
+.sg-bar button .ic{width:18px;height:18px}
+.sg-bar .pri{background:var(--accent);color:#fff;padding:0 22px}
+.sg-ink{width:34px;height:34px;padding:0 !important;border-radius:50% !important;box-shadow:inset 0 0 0 3px rgba(255,255,255,.25) !important}
+.sg-ink.on{box-shadow:0 0 0 3px var(--accent) !important}
+.sg-w.on{background:var(--glass-hi) !important;box-shadow:inset 0 0 0 2px var(--accent) !important}
+.sg-sep{width:1px;height:30px;background:var(--hair)}
