@@ -1,7 +1,7 @@
 # TabDeck installer - turns an Android tablet into a touch command center for your Windows PC.
 # Run from the repo folder:   powershell -ExecutionPolicy Bypass -File install.ps1
 $ErrorActionPreference = 'Stop'
-$Repo  = 'somesh-thakur/TabDeck'          # GitHub repo the tablet app (APK) is downloaded from
+$Repo  = 'Somesh-Thakur/TabDeck'         # GitHub repo the tablet app (APK) is downloaded from
 $Root  = $PSScriptRoot
 $CC    = Join-Path $Root 'command-center'
 $Tools = Join-Path $Root 'tools'
