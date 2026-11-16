@@ -8,6 +8,8 @@ command-center/icons/
 command-center/*.log
 command-center/.laptop-muted-by-cc
 command-center/shot.png
+command-center/themes/user-*.css
+.playwright-mcp/
 
 # --- tablet app build output + private signing key ---
 tablet-app/build/

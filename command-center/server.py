@@ -36,7 +36,8 @@ DEFAULT_APPS = ["Google Chrome", "Brave", "Discord", "WhatsApp", "Visual Studio 
 SETTINGS_FILE = ROOT / "settings.json"
 STARTUP_LNK = Path(os.environ.get("APPDATA", "")) / r"Microsoft\Windows\Start Menu\Programs\Startup\Command Center.lnk"
 DEFAULT_SETTINGS = {
-    "widgets": [{"id": w, "on": True} for w in ("perf", "gpu", "net", "media", "mic")],
+    "widgets": [{"id": w, "on": True} for w in ("perf", "gpu", "net", "media", "mic")] + [{"id": "hist", "on": False}],
+    "theme": "default", "theme_v": 0,
     "dock": ["lock", "snip", "taskmgr", "desktop"],
     "wallpaper": "aurora", "accent": "blue", "clock24": False, "show_date": True,
     "sound": True, "volume": 0.6, "banner_secs": 6,
@@ -55,6 +56,45 @@ lock = threading.Lock()
 subscribers: list[queue.Queue] = []
 state = {"tablet": False, "mic": {"on": False, "available": SCRCPY.exists()}, "notes": []}
 ICONS.mkdir(exist_ok=True)
+
+
+# ------------------------------------------------------------------ themes (user CSS)
+THEMES = ROOT / "themes"
+THEMES.mkdir(exist_ok=True)
+THEME_MAX = 256 * 1024
+HISTORY = __import__("collections").deque(maxlen=1800)   # (time, cpu, gpu, ram) - 30 min at 1 s
+
+
+def theme_meta(f):
+    import re
+    head = f.read_text(encoding="utf-8", errors="replace")[:2000]
+    tag = lambda k: (re.search(rf"@{k}\s+([^\n*@]+)", head) or [None, ""])[1].strip()
+    colors = re.findall(r"#[0-9a-fA-F]{3,8}\b", tag("colors"))[:5]
+    return {"file": f.name, "name": tag("name") or f.stem, "author": tag("author"),
+            "description": tag("description"), "colors": colors, "user": f.name.startswith("user-"),
+            "v": int(f.stat().st_mtime)}
+
+
+def list_themes():
+    return [theme_meta(f) for f in sorted(THEMES.glob("*.css")) if not f.name.startswith("_")]
+
+
+def clean_css(css):
+    """Themes are CSS only. Block anything that could reach the network (keeps TabDeck offline/private)."""
+    import re
+    css = re.sub(r"@import[^;]*;", "/* @import removed */", css, flags=re.I)
+    css = re.sub(r"url\(\s*(['\"]?)\s*(https?:|//)", r"url(\1blocked:", css, flags=re.I)
+    return css
+
+
+def save_theme(name, css):
+    import re
+    if not isinstance(css, str) or not css.strip() or len(css.encode()) > THEME_MAX:
+        raise ValueError("Theme must be a non-empty CSS file under 256 KB")
+    slug = re.sub(r"[^a-z0-9]+", "-", (name or "theme").lower()).strip("-")[:40] or "theme"
+    f = THEMES / f"user-{slug}.css"
+    f.write_text(clean_css(css), encoding="utf-8")
+    return theme_meta(f)
 
 
 def load_settings():
@@ -216,6 +256,7 @@ def stats_loop():
             s["u"] = round((net.bytes_sent - last[0].bytes_sent) / dt)
         last = (net, now)
         broadcast("s", s)
+        HISTORY.append((round(time.time(), 1), s["c"], g["u"] if g else None, s["r"]))
 
 
 def discord_watch():
@@ -641,6 +682,13 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(200, public_apps(load_apps() or []))
         if path == "/settings":
             return self.send(200, settings)
+        if path == "/themes":
+            return self.send(200, list_themes())
+        if path.startswith("/themes/"):
+            f = THEMES / Path(path).name
+            if f.suffix == ".css" and f.is_file():
+                return self.send(200, f.read_bytes(), "text/css; charset=utf-8")
+            return self.send(404, b"", "text/plain")
         if path.startswith("/media/art"):
             art = NOW_PLAYING.art[1] if NOW_PLAYING else b""
             ctype = "image/png" if art[:4] == b"\x89PNG" else "image/jpeg"
@@ -743,6 +791,28 @@ class Handler(BaseHTTPRequestHandler):
                                                     | {"wait": int(d.get("wait", 45))})})
         if p == "/claude/reply":  # the tablet's Allow / Deny tap
             return self.send(200, {"ok": claude_answer(d.get("id"), d.get("decision"))})
+        if p == "/themes/upload":
+            try:
+                meta = save_theme(d.get("name"), d.get("css"))
+            except ValueError as e:
+                return self.send(400, {"error": str(e)})
+            if settings.get("theme") == meta["file"]:             # re-uploaded the active theme: refresh it
+                update_settings({"theme_v": meta["v"]})
+            return self.send(200, meta)
+        if p == "/themes/apply":
+            f = d.get("file") or "default"
+            if f != "default" and not (THEMES / Path(f).name).is_file():
+                return self.send(404, {"error": "no such theme"})
+            v = int((THEMES / Path(f).name).stat().st_mtime) if f != "default" else 0
+            return self.send(200, update_settings({"theme": Path(f).name if f != "default" else "default", "theme_v": v}))
+        if p == "/themes/delete":
+            f = THEMES / Path(d.get("file", "")).name
+            if f.name.startswith("user-") and f.is_file():
+                f.unlink()
+                if settings.get("theme") == f.name:
+                    update_settings({"theme": "default", "theme_v": 0})
+                return self.send(200, {"ok": True})
+            return self.send(400, {"error": "only uploaded themes can be deleted"})
         if p == "/media/seek":
             return self.send(200, {"ok": bool(NOW_PLAYING and NOW_PLAYING.control("seek", d.get("pos", 0)))})
         if p == "/volume":
@@ -784,7 +854,8 @@ class Handler(BaseHTTPRequestHandler):
         hello = {"tablet": state["tablet"], "mic": state["mic"], "notes": state["notes"], "settings": settings,
                  "version": web_version,   # the tablet reloads itself when the dashboard files changed
                  "asks": [a["info"] for a in claude_asks.values()],
-                 "np": NOW_PLAYING.state if NOW_PLAYING else None, "discord": state.get("discord", False)}
+                 "np": NOW_PLAYING.state if NOW_PLAYING else None, "discord": state.get("discord", False),
+                 "hist": list(HISTORY)[::2]}   # every 2nd point is plenty for the graph
         try:
             self.wfile.write(f"event: hello\ndata: {json.dumps(hello)}\n\n".encode())
             self.wfile.flush()

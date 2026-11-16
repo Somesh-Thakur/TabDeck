@@ -1,0 +1,31 @@
+/*
+ * @name Frosted
+ * @author TabDeck
+ * @description Vivid sunset wallpaper behind heavy frosted glass, big rounded corners, thin white edges.
+ * @colors #ff7a59 #ff3d8b #7b5cff #1e90ff #ffffff
+ */
+:root {
+  --glass: rgba(255, 255, 255, .14); --glass-hi: rgba(255, 255, 255, .16); --hair: rgba(255, 255, 255, .28);
+  --dim: rgba(255, 255, 255, .78); --faint: rgba(255, 255, 255, .45);
+  --accent: #fff; --blue: #ffffff;
+  --ring-cpu: #ffffff; --ring-gpu: #ffe259; --ring-ram: #7ef9ff;
+  --r-widget: 34px;
+  --wall-base: #3a1c71;
+  --wall-img: radial-gradient(60% 80% at 0% 0%, #ff7a59 0%, transparent 60%),
+              radial-gradient(70% 80% at 100% 0%, #ff3d8b 0%, transparent 60%),
+              radial-gradient(80% 90% at 30% 100%, #7b5cff 0%, transparent 60%),
+              radial-gradient(70% 80% at 100% 100%, #1e90ff 0%, transparent 60%);
+}
+.w, .pill, .dock {
+  -webkit-backdrop-filter: blur(26px) saturate(1.6); backdrop-filter: blur(26px) saturate(1.6);
+  box-shadow: inset 0 0 0 1px var(--hair), 0 20px 50px rgba(30, 0, 60, .25) !important;
+}
+.w::before { background: linear-gradient(160deg, rgba(255, 255, 255, .35), transparent 40%); }
+.when .time { font-weight: 200; text-shadow: 0 4px 30px rgba(0, 0, 0, .15); }
+.rings .trk { opacity: .25; }
+.app .tile { background: rgba(255, 255, 255, .22) !important; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35), 0 8px 24px rgba(30, 0, 60, .25) !important; }
+.np-bg { opacity: 0 !important; }
+.np-ctl .pp { background: #fff !important; color: #3a1c71 !important; }
+.sbar .trk { background: rgba(255, 255, 255, .28) !important; }
+.tempbar { background: linear-gradient(90deg, #7ef9ff, #ffe259 60%, #ff3d8b) !important; }
+.dock { background: rgba(255, 255, 255, .16) !important; }

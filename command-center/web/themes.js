@@ -38,6 +38,7 @@ const WIDGETS = {
   net:   { name: 'Network', desc: 'Live download and upload', size: 'Small' },
   media: { name: 'Now Playing', desc: 'Song, artwork, seek bar, volume bar', size: 'Full width' },
   mic:   { name: 'Tab Mic', desc: 'Use the tablet as your mic', size: 'Small' },
+  hist:  { name: 'History', desc: 'CPU, GPU and RAM graphs (5 or 30 min)', size: 'Wide' },
 };
 
 const loadSprite = () => fetch('icons.svg').then(r => r.text()).then(t => {

@@ -1,0 +1,40 @@
+/*
+ * @name Paper
+ * @author TabDeck
+ * @description Calm e-ink look: warm paper, ink-black lines, serif clock, no glow, greyscale icons.
+ * @colors #f2efe6 #e6e1d3 #1a1a1a #6b6b6b #b8b2a2
+ */
+:root {
+  --text: #1a1a1a; --dim: #5e5a52; --faint: #a8a294;
+  --glass: #f7f4ec; --glass-hi: rgba(0, 0, 0, .05); --hair: rgba(26, 26, 26, .18);
+  --accent: #1a1a1a; --blue: #1a1a1a; --red: #a33; --green: #2f6b3a; --cyan: #1a1a1a; --purple: #1a1a1a; --orange: #8a5a00;
+  --ring-cpu: #1a1a1a; --ring-gpu: #6b6b6b; --ring-ram: #a8a294;
+  --r-widget: 10px;
+  --wall-base: #ece8dd; --wall-img: none;
+}
+.when .time { font-family: "Noto Serif", Georgia, serif; font-weight: 400; letter-spacing: -1px; }
+.when .date { font-family: "Noto Serif", Georgia, serif; font-style: italic; color: var(--dim); }
+.w, .pill, .dock, .banner, .ask, .sheet { box-shadow: inset 0 0 0 1px var(--hair) !important; backdrop-filter: none !important; }
+.w::before { display: none; }
+.rings .trk { opacity: .12; }
+.big, .legend .v { font-weight: 500; }
+.tempbar { background: linear-gradient(90deg, #d6d1c3, #1a1a1a) !important; }
+.tempbar i { background: #1a1a1a; box-shadow: 0 0 0 2.5px #f7f4ec; }
+.app .tile { background: #f7f4ec !important; box-shadow: inset 0 0 0 1px var(--hair) !important; }
+.app .tile img { filter: grayscale(1) contrast(1.1) !important; }
+.app .name { color: #1a1a1a !important; }
+.dock { background: #f7f4ec !important; }
+.dk { background: #1a1a1a !important; box-shadow: none !important; }
+.dk.toggle { opacity: .35; } .dk.toggle.on { opacity: 1; box-shadow: 0 0 0 2px #f7f4ec, 0 0 0 3.5px #1a1a1a !important; }
+.np-bg { display: none; }
+.np-art { filter: grayscale(1); box-shadow: none !important; }
+.np-artist, .np-times, .np-vol { color: var(--dim) !important; }
+.np-ctl .pp { background: #1a1a1a !important; color: #f7f4ec !important; box-shadow: none !important; }
+.sbar .trk { background: rgba(0, 0, 0, .1) !important; } .sbar .fill { background: #1a1a1a !important; }
+.banner, .ask { background: #f7f4ec !important; color: #1a1a1a; }
+.banner p, .ask .meta { color: var(--dim) !important; }
+.ask pre { background: #ece8dd !important; color: #1a1a1a !important; }
+.ask .allow { background: #1a1a1a !important; color: #f7f4ec !important; }
+.ask .deny { background: transparent !important; box-shadow: inset 0 0 0 1px #a33; color: #a33 !important; }
+.g-claude { background: #1a1a1a !important; }
+.sheet { background: #f7f4ec !important; color: #1a1a1a; }

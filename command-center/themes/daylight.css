@@ -1,0 +1,40 @@
+/*
+ * @name Daylight
+ * @author TabDeck
+ * @description iPadOS light mode: soft pastel wallpaper, frosted white widgets, dark text.
+ * @colors #f4f1fb #ffffff #007aff #ff2d55 #34c759
+ */
+:root {
+  --text: #1c1c1e; --dim: rgba(60, 60, 67, .65); --faint: rgba(60, 60, 67, .3);
+  --glass: rgba(255, 255, 255, .72); --glass-hi: rgba(0, 0, 0, .05); --hair: rgba(0, 0, 0, .07);
+  --accent: #007aff; --blue: #007aff; --red: #ff2d55; --green: #34c759; --cyan: #32ade6; --purple: #af52de; --orange: #ff9500;
+  --ring-cpu: #ff2d55; --ring-gpu: #34c759; --ring-ram: #32ade6;
+  --wall-base: #eef0f8;
+  --wall-img: radial-gradient(70% 90% at 5% 0%, #f9d9e7 0%, transparent 60%),
+              radial-gradient(60% 80% at 100% 10%, #d6e6ff 0%, transparent 60%),
+              radial-gradient(70% 70% at 70% 105%, #e4dcff 0%, transparent 60%),
+              radial-gradient(50% 60% at 15% 100%, #fff1d6 0%, transparent 60%);
+}
+.w { box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .9), 0 10px 30px rgba(80, 70, 140, .10) !important; }
+.w::before { background: linear-gradient(160deg, rgba(255, 255, 255, .6), transparent 45%); }
+.pill { box-shadow: 0 2px 10px rgba(80, 70, 140, .08); }
+.batt i { background: #1c1c1e; } .batt.chg i { background: var(--green); }
+.rings .trk { opacity: .14; }
+.app .tile { background: rgba(255, 255, 255, .85) !important; box-shadow: 0 6px 16px rgba(80, 70, 140, .12), inset 0 0 0 .5px rgba(0, 0, 0, .05) !important; }
+.app .name { color: #1c1c1e !important; }
+.dock { background: rgba(255, 255, 255, .55) !important; box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .9), 0 16px 40px rgba(80, 70, 140, .18) !important; }
+.np-bg { filter: blur(40px) saturate(1.4) brightness(1.25) !important; opacity: .55 !important; }
+.np-artist { color: var(--dim) !important; } .np-artist b { color: var(--faint) !important; }
+.np-times { color: var(--dim) !important; }
+.np-ctl .pp { background: #1c1c1e !important; color: #fff !important; }
+.np-vol { color: var(--dim) !important; }
+.sbar .trk { background: rgba(0, 0, 0, .1) !important; } .sbar .fill { background: #1c1c1e !important; }
+.tempbar i { box-shadow: 0 0 0 2.5px #fff; }
+.banner, .ask { background: rgba(255, 255, 255, .9) !important; color: #1c1c1e; box-shadow: 0 20px 50px rgba(60, 50, 120, .25) !important; }
+.banner p { color: var(--dim) !important; }
+.ask pre { background: rgba(0, 0, 0, .05) !important; color: #1c1c1e !important; }
+.ask .allow { background: #34c759 !important; color: #fff !important; }
+.sheet { background: rgba(250, 250, 252, .98) !important; color: #1c1c1e; }
+.search, .field { background: rgba(0, 0, 0, .06) !important; color: #1c1c1e !important; }
+.search input { color: #1c1c1e !important; }
+.dk.toggle.on { box-shadow: 0 0 0 2.5px #1c1c1e !important; }

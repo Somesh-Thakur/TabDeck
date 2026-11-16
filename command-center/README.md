@@ -57,6 +57,15 @@ to the dashboard by itself when the laptop is back.
 Mute / deafen appear in the dock only while Discord runs. One-time setup in Discord › Settings › Keybinds:
 **Toggle Mute = Ctrl+Shift+Alt+M**, **Toggle Deafen = Ctrl+Shift+Alt+D**.
 
+## Themes
+CSS files in `themes/` (built-ins) plus uploads saved as `themes/user-*.css`. Endpoints: `GET /themes`,
+`GET /themes/<file>`, `POST /themes/upload {name, css}`, `POST /themes/apply {file}`, `POST /themes/delete {file}`.
+Uploads are sanitised (`@import` and http(s) URLs removed, max 256 KB). The dashboard loads the active theme
+after a `<style id="userVars">` block, so themes override the user's wallpaper/accent. Guide: `../THEMING.md`.
+
+## History widget
+`HISTORY` keeps 30 min of (time, cpu, gpu, ram) at 1 s; sent (every 2nd point) in the `hello` event, then live.
+
 ## Tablet debloat
 `tablet-app\debloat.ps1` removed 36 apps for the user (reversible): undo with `tablet-app\restore.ps1`.
 

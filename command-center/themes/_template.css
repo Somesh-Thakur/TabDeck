@@ -1,0 +1,62 @@
+/*
+ * @name My Theme
+ * @author your-name
+ * @description One line about your theme. It shows in the TabDeck gallery.
+ * @colors #06060a #1c1c22 #0a84ff #ff375f
+ *
+ * HOW TO USE
+ *   1. Edit anything below (delete what you don't need, everything is optional).
+ *   2. TabDeck settings app > Themes > "Upload .css". It applies instantly.
+ *   3. Re-upload the same @name to update it.
+ *
+ * RULES: CSS only. @import and http(s) links are removed (TabDeck stays offline).
+ *        Use data: URIs for images/fonts. Max 256 KB.
+ * Full guide: THEMING.md in the TabDeck repo.
+ */
+
+/* ------------------------------------------------------------ 1. variables (the easy way) */
+:root {
+  --text: #ffffff;                       /* main text */
+  --dim: rgba(235, 235, 245, .6);        /* secondary text */
+  --faint: rgba(235, 235, 245, .3);      /* hints, tracks */
+  --glass: rgba(28, 28, 34, .52);        /* widget / pill background */
+  --glass-hi: rgba(255, 255, 255, .07);  /* buttons inside widgets */
+  --hair: rgba(255, 255, 255, .09);      /* hairline borders, graph grid */
+  --accent: #0a84ff;  --blue: #0a84ff;   /* links, Edit button, active things */
+  --red: #ff375f; --green: #30d158; --cyan: #64d2ff; --orange: #ff9f0a; --yellow: #ffd60a; --purple: #bf5af2;
+  --ring-cpu: #ff2d55; --ring-gpu: #a6ff00; --ring-ram: #00e0ff;   /* rings + history graph */
+  --r-widget: 28px;                      /* widget corner radius */
+  /* wallpaper (overrides the one picked in settings): */
+  /* --wall-base: #000;  --wall-img: linear-gradient(...); */
+}
+
+/* ------------------------------------------------------------ 2. whole page */
+/* html, body { font-family: ...; }            fonts: system-ui, serif, monospace, or a data: @font-face */
+/* body { background: ...; }                    wallpaper */
+/* body::after { content: ""; ... }             overlays (scanlines, grain, vignette) */
+
+/* ------------------------------------------------------------ 3. header */
+/* .when .time { }   big clock          .when .date { }   date above it        */
+/* .pill { }         status pills       .batt { }         battery icons        */
+/* .bell { }         notifications button                                      */
+
+/* ------------------------------------------------------------ 4. widgets */
+/* .widgets { }                    the widget grid (3 columns; rearrange with grid-* / order) */
+/* .w { }                          every widget card   .w-title { }  small titles             */
+/* [data-w="perf"]  rings          [data-w="gpu"]  GPU temperature   [data-w="net"]  network   */
+/* [data-w="media"] Now Playing    [data-w="mic"]  tab mic           [data-w="hist"] history   */
+/* .rings .trk / .rings .val       ring tracks / ring values (stroke)                         */
+/* .legend .k / .v / .s            ring labels / numbers / sub text                           */
+/* .big { }   big numbers   .tempbar { }   temperature bar   .spark path { }   network graph  */
+/* .np-art .np-title .np-artist .sbar .trk .fill .np-ctl .pp       Now Playing parts          */
+/* .hist-svg path { }  #hCpu #hGpu #hRam                           history graph lines        */
+
+/* ------------------------------------------------------------ 5. apps + dock */
+/* .apps-head h2 { }   "Apps" title     .app .tile { }  icon tiles     .app .name { }  labels  */
+/* .dock { }   the dock      .dk { }  dock buttons      .g-gray .g-pink .g-green ...  colours  */
+
+/* ------------------------------------------------------------ 6. pop-ups */
+/* .banner { }   notification banner    .ask { }   Claude Allow/Deny card    .sheet { }  sheets */
+
+/* State hooks you can use:  html[data-theme="your-file-name"]  ·  .np.is-playing  ·  .dk.toggle.on
+   .mic.on  ·  .editing .app (jiggle mode)  ·  .np.has-art  */

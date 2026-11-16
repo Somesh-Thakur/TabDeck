@@ -119,6 +119,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .g-teal{background:linear-gradient(160deg,#5be1e6,#0a9396)} .g-red{background:linear-gradient(160deg,#ff6961,#d70015)}
 .g-purple{background:linear-gradient(160deg,#da8fff,#9b30d9)}
 
+/* themes gallery */
+.tgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tcard{background:var(--group);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.06);
+  transition:transform .2s,box-shadow .2s;position:relative}
+.tcard:hover{transform:translateY(-2px)}
+.tcard.on{box-shadow:0 0 0 2px var(--blue)}
+.tsw{height:64px;display:flex}
+.tsw i{flex:1}
+.tinfo{padding:10px 12px 12px}
+.tinfo b{font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tinfo .by{font-size:11.5px;color:var(--faint);margin-top:1px}
+.tinfo p{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.4;min-height:34px}
+.tbadge{font-size:10.5px;font-weight:700;background:var(--blue);color:#fff;padding:2px 7px;border-radius:6px}
+.tdel{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:7px;background:rgba(0,0,0,.55);color:#fff;display:none;place-items:center}
+.tcard:hover .tdel{display:grid}
+.tdel .ic{width:14px;height:14px}
+a.btn{text-decoration:none;color:inherit}
 /* preview */
 .pv{border-left:1px solid var(--line);padding:26px 22px;display:flex;flex-direction:column;gap:14px;background:#19191b}
 .pv h2{font-size:12px;font-weight:600;color:var(--dim);display:flex;align-items:center;gap:8px}
@@ -161,6 +178,7 @@ code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:
     <button class="nav on" data-s="home"><span class="sq" style="background:#0a84ff"><svg class="ic"><use href="#i-grid"/></svg></span>Home Screen</button>
     <button class="nav" data-s="widgets"><span class="sq" style="background:#bf5af2"><svg class="ic"><use href="#i-widgets"/></svg></span>Widgets</button>
     <button class="nav" data-s="dock"><span class="sq" style="background:#ff9f0a"><svg class="ic"><use href="#i-dock"/></svg></span>Dock</button>
+    <button class="nav" data-s="themes"><span class="sq" style="background:linear-gradient(135deg,#ff375f,#bf5af2,#0a84ff)"><svg class="ic"><use href="#i-sparkle"/></svg></span>Themes</button>
     <button class="nav" data-s="look"><span class="sq" style="background:#ff375f"><svg class="ic"><use href="#i-palette"/></svg></span>Appearance</button>
     <button class="nav" data-s="notif"><span class="sq" style="background:#ff453a"><svg class="ic"><use href="#i-bell"/></svg></span>Notifications</button>
     <button class="nav" data-s="screen"><span class="sq" style="background:#0a9396"><svg class="ic"><use href="#i-screens"/></svg></span>Second Screen</button>
@@ -193,6 +211,17 @@ code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:
       <div class="group"><div class="dockbar" id="dockBar"></div></div>
       <div class="label">ADD AN ACTION</div>
       <div class="group avail" id="dockAvail"></div>
+    </section>
+
+    <!-- THEMES -->
+    <section id="s-themes">
+      <h1>Themes</h1><p class="lead">Change the whole look of the tablet with a CSS file. Make your own or grab one from the community.</p>
+      <div class="label"><span>INSTALLED</span><div class="btns">
+        <a class="btn" href="themes/_template.css" download="my-theme.css"><svg class="ic"><use href="#i-down"/></svg>Template</a>
+        <button class="btn primary" id="themeUpload"><svg class="ic"><use href="#i-plus"/></svg>Upload .css</button></div></div>
+      <input type="file" id="themeFile" accept=".css,text/css" hidden>
+      <div class="tgrid" id="themeGrid"></div>
+      <p class="tip" style="margin:12px 4px">Themes are CSS only, so they can't run code or touch your PC. Links to the internet inside a theme are blocked. The guide (THEMING.md in the repo) lists everything you can style.</p>
     </section>
 
     <!-- APPEARANCE -->
@@ -395,6 +424,32 @@ $('dockBar').addEventListener('click',e=>{const x=e.target.closest('[data-x]');i
 $('dockAvail').addEventListener('click',e=>{const r=e.target.closest('[data-add]');if(!r)return;
   if(S.dock.length>=8)return toast('The dock holds up to 8');save({dock:[...S.dock,r.dataset.add]});});
 
+/* ---------- themes */
+let themes=[];
+async function loadThemes(){themes=await fetch('themes').then(r=>r.json());renderThemes();}
+function renderThemes(){
+  const active=S.theme||'default';
+  const card=(t)=>{const sw=(t.colors&&t.colors.length?t.colors:['#1c1c1e','#2c2c2e','#0a84ff']).map(c=>`<i style="background:${esc(c)}"></i>`).join('');
+    return `<div class="tcard${active===t.file?' on':''}" data-file="${esc(t.file)}"><div class="tsw">${sw}</div>
+      <div class="tinfo"><b>${esc(t.name)}${active===t.file?'<span class="tbadge">ACTIVE</span>':''}</b>
+      <div class="by">${t.author?'by '+esc(t.author):(t.user?'Uploaded by you':'')}</div><p>${esc(t.description||'')}</p></div>
+      ${t.user?`<button class="tdel" data-del="${esc(t.file)}" title="Delete"><svg class="ic"><use href="#i-trash"/></svg></button>`:''}</div>`;};
+  $('themeGrid').innerHTML=card({file:'default',name:'Default',description:'The original TabDeck look: dark glass, activity rings, your wallpaper.',colors:['#06060a','#5e2cd6','#0a84ff','#ff375f']})
+    +themes.map(card).join('');
+}
+$('themeGrid').addEventListener('click',async e=>{
+  const del=e.target.closest('[data-del]');
+  if(del){e.stopPropagation();if(!confirm('Delete this theme?'))return;await post('themes/delete',{file:del.dataset.del});S=await fetch('settings').then(r=>r.json());loadThemes();toast('Theme deleted');return;}
+  const c=e.target.closest('.tcard');if(!c)return;
+  S=await post('themes/apply',{file:c.dataset.file});renderThemes();toast(c.dataset.file==='default'?'Back to the default look':'Theme applied');});
+$('themeUpload').onclick=()=>$('themeFile').click();
+$('themeFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  if(f.size>256*1024)return toast('Theme too big (max 256 KB)');
+  const css=await f.text();const name=(css.match(/@name\s+([^\n*@]+)/)||[])[1]||f.name.replace(/\.css$/i,'');
+  const r=await fetch('themes/upload',{method:'POST',body:JSON.stringify({name:name.trim(),css})}).then(r=>r.json());
+  if(r.error)return toast(r.error);
+  S=await post('themes/apply',{file:r.file});await loadThemes();toast(`Installed “${r.name}”`);};
+
 /* ---------- appearance */
 function renderLook(){
   $('walls').innerHTML=Object.entries(THEMES).map(([k,t])=>`<div class="wall${S.wallpaper===k?' on':''}" data-wall="${k}" style="background-color:${t.base};background-image:${themeCss(k)}"><span>${t.name}</span></div>`).join('');
@@ -460,7 +515,7 @@ function render(){
 
 (async()=>{
   [S,apps]=await Promise.all([fetch('settings').then(r=>r.json()),fetch('apps').then(r=>r.json())]);
-  render();renderApps();status();
+  render();renderApps();status();loadThemes();
   const start=document.querySelector(`.nav[data-s="${location.hash.slice(1)}"]`);if(start)start.click();  // e.g. settings.html#look
   setInterval(()=>{if(document.visibilityState==='visible')status();},4000);
 })();

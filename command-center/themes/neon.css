@@ -1,0 +1,34 @@
+/*
+ * @name Neon
+ * @author TabDeck
+ * @description Cyberpunk: deep purple night, hot pink and cyan glow, uppercase titles.
+ * @colors #0b0118 #ff2bd6 #00f0ff #fff200 #2a0b4a
+ */
+:root {
+  --text: #f3e9ff; --dim: rgba(220, 190, 255, .7); --faint: rgba(200, 160, 255, .35);
+  --glass: rgba(24, 6, 44, .72); --glass-hi: rgba(255, 43, 214, .1); --hair: rgba(0, 240, 255, .35);
+  --accent: #ff2bd6; --blue: #00f0ff; --red: #ff2b6a; --green: #39ff9a; --cyan: #00f0ff; --purple: #ff2bd6; --orange: #fff200;
+  --ring-cpu: #ff2bd6; --ring-gpu: #fff200; --ring-ram: #00f0ff;
+  --r-widget: 14px;
+  --wall-base: #07010f;
+  --wall-img: linear-gradient(180deg, transparent 55%, rgba(255, 43, 214, .18) 100%),
+              repeating-linear-gradient(90deg, rgba(0, 240, 255, .07) 0 1px, transparent 1px 60px),
+              repeating-linear-gradient(0deg, rgba(0, 240, 255, .07) 0 1px, transparent 1px 60px),
+              radial-gradient(80% 60% at 50% 0%, #2a0b4a 0%, #07010f 70%);
+}
+.w { box-shadow: inset 0 0 0 1px rgba(0, 240, 255, .45), 0 0 22px rgba(0, 240, 255, .12), inset 0 0 30px rgba(255, 43, 214, .06) !important; }
+.w::before { background: linear-gradient(160deg, rgba(255, 43, 214, .12), transparent 40%); }
+.w-title, .apps-head h2, .legend .k { text-transform: uppercase; letter-spacing: 2px; }
+.when .time { font-weight: 300; color: #fff; text-shadow: 0 0 12px #ff2bd6, 0 0 30px rgba(255, 43, 214, .6); }
+.when .date { color: #00f0ff; text-transform: uppercase; letter-spacing: 3px; font-size: 14px; }
+.big, .legend .v { text-shadow: 0 0 10px currentColor; }
+.rings .val { filter: drop-shadow(0 0 6px currentColor); }
+.app .tile { background: rgba(30, 6, 54, .9) !important; box-shadow: inset 0 0 0 1px rgba(255, 43, 214, .55), 0 0 14px rgba(255, 43, 214, .25) !important; }
+.app .name { color: #f3e9ff !important; }
+.dock { background: rgba(14, 2, 28, .8) !important; box-shadow: inset 0 0 0 1px rgba(0, 240, 255, .5), 0 0 30px rgba(0, 240, 255, .2) !important; }
+.dk { box-shadow: 0 0 14px rgba(255, 255, 255, .15) !important; }
+.np-ctl .pp { background: #ff2bd6 !important; color: #fff !important; box-shadow: 0 0 20px #ff2bd6 !important; }
+.sbar .fill { background: linear-gradient(90deg, #ff2bd6, #00f0ff) !important; box-shadow: 0 0 10px #ff2bd6; }
+.banner, .ask { box-shadow: inset 0 0 0 1px #ff2bd6, 0 0 40px rgba(255, 43, 214, .35) !important; background: rgba(20, 4, 38, .94) !important; }
+.ask .allow { background: #00f0ff !important; color: #07010f !important; }
+.pill { box-shadow: inset 0 0 0 1px rgba(0, 240, 255, .4) !important; }

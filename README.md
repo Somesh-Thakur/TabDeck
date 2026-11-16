@@ -20,6 +20,15 @@ Claude Code. All over one USB cable, no Wi-Fi, and it starts by itself when you 
 | **Discord** | Mute / deafen buttons that appear only while Discord is running. |
 | **Night clock** | PC off or asleep → the tablet shows a dim, burn-in-safe clock and wakes up with the PC. |
 | **Desktop app** | Customise everything (apps, widgets, dock, look, sound, brightness…) with a live preview of the tablet. |
+| **Themes** | Restyle the whole tablet with one CSS file. 5 built in (Daylight, Terminal, Neon, Paper, Frosted), upload your own. See [THEMING.md](THEMING.md). |
+| **History graphs** | CPU / GPU / RAM over the last 5 or 30 minutes. |
+
+### Themes
+| Daylight | Terminal | Neon |
+|---|---|---|
+| ![](docs/themes/daylight.png) | ![](docs/themes/terminal.png) | ![](docs/themes/neon.png) |
+
+Make your own in minutes: [THEMING.md](THEMING.md). Share it with a pull request.
 
 **Light on your PC:** the background server is one Python process using about 8 MB of RAM and ~0.01 % CPU.
 Second screen, mic and speaker only run while they're switched on.

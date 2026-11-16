@@ -17,12 +17,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;color:var(--text);user-select:none;-webkit-user-select:none;
   font-family:"SF Pro Display","Inter",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
-body{background:#06060a;
-  background-image:
-    radial-gradient(70% 90% at 8% 0%, rgba(94,44,214,.55) 0%, transparent 60%),
-    radial-gradient(60% 80% at 100% 10%, rgba(0,122,255,.38) 0%, transparent 60%),
-    radial-gradient(70% 70% at 70% 105%, rgba(255,55,95,.32) 0%, transparent 60%),
-    radial-gradient(50% 60% at 20% 100%, rgba(255,159,10,.16) 0%, transparent 60%);}
+/* wallpaper + accent come from the user's settings as variables, so themes can override them */
+body{background-color:var(--wall-base,#06060a);background-image:var(--wall-img,none);background-size:cover}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 svg{display:block}
 .ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -50,7 +46,20 @@ header{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-
   color:#fff;font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 5px}
 
 /* ---------- widgets */
-.widgets{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:clamp(120px,calc((100vh - 306px) / 3),170px);gap:21px;align-content:start;grid-auto-flow:row dense}
+.widgets{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:clamp(120px,calc((100vh - 306px) / 3),170px);gap:21px;align-content:start;grid-auto-flow:row dense;
+  overflow-y:auto;scrollbar-width:none;padding-bottom:4px}
+.widgets::-webkit-scrollbar{display:none}
+/* History widget */
+.hist{padding:14px 16px 12px}
+.hist .w-title{justify-content:space-between}
+.hist .w-title em{font-style:normal;font-weight:600;color:var(--faint);font-size:12px}
+.hist-svg{flex:1 1 0;min-height:0;height:auto;width:100%;margin-top:6px;overflow:visible}
+.hist-svg .grid{stroke:var(--hair);stroke-width:1;vector-effect:non-scaling-stroke}
+.hist-svg path{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.hist-svg .area{stroke:none;opacity:.14}
+#hCpu{stroke:var(--ring-cpu)} #hGpu{stroke:var(--ring-gpu)} #hRam{stroke:var(--ring-ram)} #hCpuA{fill:var(--ring-cpu)}
+.hist-legend{display:flex;gap:14px;font-size:12px;font-weight:600;margin-top:6px;color:var(--dim)}
+.hist-legend b{font-weight:700} .hist-legend .c{color:var(--ring-cpu)} .hist-legend .g{color:var(--ring-gpu)} .hist-legend .r{color:var(--ring-ram)}
 .screen.nowidgets{grid-template-columns:1fr}.screen.nowidgets .widgets{display:none}
 .preview *{pointer-events:none!important}
 .w{background:var(--glass);border-radius:var(--r-widget);box-shadow:inset 0 0 0 .5px var(--hair),0 10px 30px rgba(0,0,0,.18);
@@ -270,6 +279,8 @@ button:active{transform:scale(.9)}
 .offline{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);padding:9px 16px;border-radius:18px;font-size:14px;font-weight:600;
   background:rgba(255,55,95,.9);display:none}
 </style>
+<style id="userVars"></style>
+<link id="themeCss" rel="stylesheet" disabled>
 </head>
 <body>
 <div id="sprite" style="display:none"></div>
@@ -313,6 +324,15 @@ button:active{transform:scale(.9)}
       <div class="rate" style="color:var(--cyan)"><svg class="ic"><use href="#i-down"/></svg><b id="down">–</b><span id="downU"></span></div>
       <div class="rate" style="color:var(--purple)"><svg class="ic"><use href="#i-up"/></svg><b id="up">–</b><span id="upU"></span></div>
       <svg class="spark" viewBox="0 0 100 34" preserveAspectRatio="none"><path id="sparkD" stroke="var(--cyan)"/><path id="sparkU" stroke="var(--purple)" opacity=".7"/></svg>
+    </div>
+
+    <div class="w m2 hist" data-w="hist" id="hist">
+      <div class="w-title"><span style="display:flex;gap:6px;align-items:center"><svg class="ic"><use href="#i-wave"/></svg>History</span><em id="histRange">last 5 min · tap for 30</em></div>
+      <svg class="hist-svg" viewBox="0 0 300 100" preserveAspectRatio="none">
+        <line class="grid" x1="0" y1="25" x2="300" y2="25"/><line class="grid" x1="0" y1="50" x2="300" y2="50"/><line class="grid" x1="0" y1="75" x2="300" y2="75"/>
+        <path class="area" id="hCpuA"/><path id="hRam"/><path id="hGpu"/><path id="hCpu"/>
+      </svg>
+      <div class="hist-legend"><span class="c">CPU <b id="hlC">–</b></span><span class="g">GPU <b id="hlG">–</b></span><span class="r">RAM <b id="hlR">–</b></span></div>
     </div>
 
     <div class="w m3 np" data-w="media" id="np">
@@ -391,8 +411,11 @@ let S={widgets:[],dock:['lock','snip','taskmgr','desktop'],wallpaper:'aurora',ac
 function applySettings(s){
   if(!s)return; S=s;
   const t=THEMES[s.wallpaper]||THEMES.aurora;
-  document.body.style.backgroundColor=t.base;document.body.style.backgroundImage=themeCss(s.wallpaper);
-  document.documentElement.style.setProperty('--blue',ACCENTS[s.accent]||ACCENTS.blue);
+  const acc=ACCENTS[s.accent]||ACCENTS.blue;
+  $('userVars').textContent=`:root{--wall-base:${t.base};--wall-img:${themeCss(s.wallpaper)};--blue:${acc};--accent:${acc}}`;
+  const th=$('themeCss'), want=s.theme&&s.theme!=='default'?`themes/${s.theme}?v=${s.theme_v||0}`:'';
+  if(want){if(th.getAttribute('href')!==want)th.setAttribute('href',want);th.disabled=false;}else{th.disabled=true;th.removeAttribute('href');}
+  document.documentElement.dataset.theme=(s.theme||'default').replace(/\.css$/,'');
   $('date').style.visibility=s.show_date?'visible':'hidden';
   let shown=0;
   (s.widgets||[]).forEach((w,i)=>{const el=document.querySelector(`[data-w="${w.id}"]`);if(!el)return;
@@ -502,6 +525,22 @@ function onStats(s){
     const m=Math.max(2e4,...H.d,...H.u);spark('sparkD',H.d,m);spark('sparkU',H.u,m);}
   if(s.b){$('lapPct').textContent=s.b[0]+'%';batt($('lapBat'),s.b[0],s.b[1]);}
 }
+
+/* History graphs: CPU / GPU / RAM over the last 5 or 30 minutes */
+let HIST=[], histRange=300;
+function histAdd(s){const g=s.g?s.g.u:(HIST.length?HIST[HIST.length-1][2]:null);
+  HIST.push([Date.now()/1000,s.c,g,s.r]);const cut=Date.now()/1000-1800;while(HIST.length&&HIST[0][0]<cut)HIST.shift();}
+function histPath(idx,area){const now=Date.now()/1000,from=now-histRange;let d='',first=null,last=null;
+  const pts=HIST.filter(p=>p[0]>=from&&p[idx]!=null);
+  const step=Math.max(1,Math.floor(pts.length/240));          // keep it light on the tablet
+  for(let i=0;i<pts.length;i+=step){const p=pts[i],x=((p[0]-from)/histRange*300).toFixed(1),y=(100-Math.min(100,p[idx])).toFixed(1);
+    d+=(d?'L':'M')+x+' '+y;if(first===null)first=x;last=x;}
+  return area&&d?d+`L${last} 100L${first} 100Z`:d;}
+function histDraw(){if(!$('hist')||$('hist').style.display==='none')return;
+  $('hCpu').setAttribute('d',histPath(1));$('hCpuA').setAttribute('d',histPath(1,true));
+  $('hGpu').setAttribute('d',histPath(2));$('hRam').setAttribute('d',histPath(3));
+  const l=HIST[HIST.length-1];if(l){$('hlC').textContent=Math.round(l[1])+'%';$('hlG').textContent=l[2]==null?'–':Math.round(l[2])+'%';$('hlR').textContent=Math.round(l[3])+'%';}}
+$('hist').onclick=()=>{histRange=histRange===300?1800:300;$('histRange').textContent=histRange===300?'last 5 min · tap for 30':'last 30 min · tap for 5';histDraw();};
 
 /* tablet battery straight from the browser */
 navigator.getBattery?.().then(b=>{const f=()=>{const p=Math.round(b.level*100);$('tabPct').textContent=p+'%';batt($('tabBat'),p,b.charging);};
@@ -615,10 +654,11 @@ function connect(){
   if(!PREVIEW&&!APP)setInterval(()=>{if(!document.fullscreenElement&&es.readyState===1)post('need_tap');},12000);
   es.onerror=()=>{$('link').className='dot';$('offline').style.display='block';
     if(APP&&!goneTimer)goneTimer=setTimeout(()=>{if(es.readyState!==1)CC.laptopGone();},15000);};  // laptop off/asleep -> dim clock
-  es.addEventListener('s',e=>onStats(JSON.parse(e.data)));
+  es.addEventListener('s',e=>{const s=JSON.parse(e.data);onStats(s);histAdd(s);histDraw();});
   es.addEventListener('hello',e=>{const h=JSON.parse(e.data);
     if(window.ccVersion&&h.version&&h.version!==window.ccVersion){location.reload();return;}
-    window.ccVersion=h.version;mic=h.mic;micUi();notes=h.notes;renderNotes();applySettings(h.settings);asks=[];(h.asks||[]).forEach(addAsk);showAsk();npState=h.np;npRender();setDiscord(h.discord);});
+    window.ccVersion=h.version;mic=h.mic;micUi();notes=h.notes;renderNotes();applySettings(h.settings);asks=[];(h.asks||[]).forEach(addAsk);showAsk();npState=h.np;npRender();setDiscord(h.discord);
+    if(h.hist)HIST=h.hist.slice();histDraw();});
   es.addEventListener('settings',e=>applySettings(JSON.parse(e.data)));
   es.addEventListener('claude_ask',e=>addAsk(JSON.parse(e.data)));
   es.addEventListener('np',e=>{npState=JSON.parse(e.data);npRender();});

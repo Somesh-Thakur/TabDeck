@@ -1,0 +1,48 @@
+/*
+ * @name Terminal
+ * @author TabDeck
+ * @description Green phosphor CRT: monospace everything, square corners, glow and scanlines.
+ * @colors #000000 #031a08 #33ff66 #1b8a3c #0b3d18
+ */
+:root {
+  --text: #33ff66; --dim: #1fbf4c; --faint: #16803a;
+  --glass: rgba(0, 20, 6, .85); --glass-hi: rgba(51, 255, 102, .08); --hair: rgba(51, 255, 102, .35);
+  --accent: #33ff66; --blue: #33ff66; --red: #ff5555; --green: #33ff66; --cyan: #66ffcc; --purple: #33ff66; --orange: #ccff33;
+  --ring-cpu: #33ff66; --ring-gpu: #66ffcc; --ring-ram: #ccff33;
+  --r-widget: 2px;
+  --wall-base: #000; --wall-img: radial-gradient(120% 90% at 50% 50%, #031a08 0%, #000 70%);
+}
+html, body { font-family: "Cascadia Mono", Consolas, "Droid Sans Mono", monospace !important; letter-spacing: .2px; }
+body::after {               /* scanlines + vignette */
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 50;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .28) 0 1px, transparent 1px 3px),
+              radial-gradient(130% 100% at 50% 50%, transparent 60%, rgba(0, 0, 0, .55) 100%);
+}
+* { text-shadow: 0 0 6px rgba(51, 255, 102, .45); }
+.when .time { font-weight: 400; letter-spacing: -2px; }
+.when .date::before { content: "> "; }
+.w, .pill, .dock, .banner, .ask, .sheet, .np-art, .app .tile, .dk {
+  border-radius: 2px !important; box-shadow: inset 0 0 0 1px var(--hair), 0 0 18px rgba(51, 255, 102, .08) !important;
+  backdrop-filter: none !important;
+}
+.w::before { display: none; }
+.w-title { text-transform: uppercase; letter-spacing: 1.5px; }
+.w-title::before { content: "["; } .w-title::after { content: "]"; }
+.rings .trk { opacity: .15; }
+.legend .k { text-transform: uppercase; letter-spacing: 1px; }
+.app .tile { background: rgba(0, 30, 10, .9) !important; }
+.app .tile img { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(4) brightness(.9) !important; }
+.app .name { color: var(--text) !important; }
+.dk { background: rgba(0, 30, 10, .95) !important; color: var(--text) !important; }
+.dk .ic { stroke: var(--text); }
+.dock { background: rgba(0, 12, 4, .9) !important; }
+.np-bg { display: none; }
+.np-art { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(3); }
+.np-artist { color: var(--dim) !important; }
+.np-ctl .pp { background: var(--text) !important; color: #000 !important; text-shadow: none; }
+.sbar .trk { background: rgba(51, 255, 102, .15) !important; } .sbar .fill { background: var(--text) !important; }
+.tempbar { background: linear-gradient(90deg, #0b3d18, #33ff66) !important; }
+.banner, .ask { background: rgba(0, 16, 5, .96) !important; }
+.ask .allow { background: #33ff66 !important; color: #000 !important; text-shadow: none; }
+.ask .deny { background: rgba(255, 85, 85, .12) !important; }
+.g-claude, .g-blue, .g-green, .g-orange, .g-pink { background: #0b3d18 !important; }
