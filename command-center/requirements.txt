@@ -1,0 +1,9 @@
+psutil>=7.0
+# tablet speaker (laptop sound -> tablet)
+numpy>=2.0
+soundcard>=0.4.3
+# Now Playing widget (Windows media session)
+winrt-runtime>=3.0
+winrt-Windows.Media.Control>=3.0
+winrt-Windows.Foundation>=3.0
+winrt-Windows.Storage.Streams>=3.0

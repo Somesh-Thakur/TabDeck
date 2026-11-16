@@ -1,0 +1,24 @@
+# --- third-party tools: downloaded by install.ps1, never committed (licences don't allow redistribution) ---
+tools/
+
+# --- personal data: each user's own settings, apps and logs ---
+command-center/settings.json
+command-center/apps.json
+command-center/icons/
+command-center/*.log
+command-center/.laptop-muted-by-cc
+command-center/shot.png
+
+# --- tablet app build output + private signing key ---
+tablet-app/build/
+tablet-app/*.apk
+tablet-app/*.idsig
+tablet-app/*.keystore
+tablet-app/restore.ps1
+
+# --- python / editor noise ---
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.claude/

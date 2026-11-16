@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TabDeck</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{
+  --bg:#1e1e20; --side:#252528; --group:#2c2c2f; --row-hover:#333337; --line:rgba(255,255,255,.07);
+  --text:#f5f5f7; --dim:#a1a1a6; --faint:#6e6e73; --blue:#0a84ff; --green:#30d158; --red:#ff453a;
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font:13.5px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased;user-select:none}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.fill{fill:currentColor;stroke:none}
+.app{display:grid;grid-template-columns:236px 1fr 460px;height:100%}
+
+/* sidebar */
+aside{background:var(--side);border-right:1px solid var(--line);padding:22px 12px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:11px;padding:0 10px 18px}
+.brand img{width:36px;height:36px;border-radius:9px}
+.brand b{font-size:15px;font-weight:600;display:block}
+.brand span{font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.nav{display:flex;align-items:center;gap:11px;padding:7px 10px;border-radius:8px;font-size:13.5px;color:var(--text);text-align:left;width:100%}
+.nav:hover{background:rgba(255,255,255,.05)}
+.nav.on{background:var(--blue)}
+.sq{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:#fff;flex:none}
+.sq .ic{width:15px;height:15px;stroke-width:2.1}
+.side-foot{margin-top:auto;padding:12px 10px 0;font-size:11.5px;color:var(--faint);line-height:1.5}
+
+/* content */
+main{overflow-y:auto;padding:26px 30px 40px;scrollbar-width:thin;scrollbar-color:#444 transparent}
+main h1{font-size:22px;font-weight:650;letter-spacing:-.2px;margin-bottom:4px}
+main .lead{color:var(--dim);margin-bottom:22px}
+section{display:none;animation:fade .3s var(--ease)}
+section.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}}
+.label{font-size:12px;font-weight:600;color:var(--dim);margin:22px 4px 7px;display:flex;justify-content:space-between;align-items:center}
+.label:first-of-type{margin-top:0}
+.group{background:var(--group);border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.06)}
+.row{display:flex;align-items:center;gap:12px;min-height:46px;padding:7px 14px;position:relative}
+.row+.row::before{content:"";position:absolute;top:0;left:14px;right:0;height:1px;background:var(--line)}
+.row .grow{flex:1;min-width:0}
+.row .t{font-size:13.5px}
+.row .d{font-size:12px;color:var(--dim)}
+.row.drag{cursor:grab}
+.row.dragging{opacity:.35}
+.row.over{box-shadow:inset 0 2px 0 var(--blue)}
+.handle{color:var(--faint);cursor:grab}
+.appic{width:30px;height:30px;border-radius:7px;object-fit:contain;flex:none;background:rgba(255,255,255,.06);padding:3px}
+.appic.web{object-fit:cover;padding:0;background:#fff}
+.letter{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;font-weight:700;flex:none;background:#48484a}
+.name-in{background:transparent;border:0;outline:0;font-size:13.5px;width:100%;padding:3px 6px;margin-left:-6px;border-radius:6px}
+.name-in:focus{background:rgba(255,255,255,.08);box-shadow:0 0 0 2px var(--blue)}
+.tag{font-size:11px;color:var(--dim);background:rgba(255,255,255,.07);padding:2px 8px;border-radius:6px}
+.iconbtn{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;color:var(--dim)}
+.iconbtn:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.iconbtn.del:hover{color:var(--red)}
+.btn{height:30px;padding:0 13px;border-radius:7px;background:rgba(255,255,255,.1);font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:rgba(255,255,255,.15)}
+.btn.primary{background:var(--blue);color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn .ic{width:15px;height:15px}
+.btns{display:flex;gap:8px}
+
+/* switch */
+.sw{width:42px;height:25px;border-radius:13px;background:#48484a;position:relative;transition:background .25s;flex:none}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:transform .3s var(--ease)}
+.sw.on{background:var(--green)}
+.sw.on::after{transform:translateX(17px)}
+
+/* segmented + slider + select */
+.seg{display:inline-flex;background:rgba(118,118,128,.24);border-radius:8px;padding:2px}
+.seg button{padding:4px 14px;border-radius:6px;font-size:12.5px;color:var(--dim)}
+.seg button.on{background:#636366;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:#48484a;outline:0;flex:1;max-width:260px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer}
+.radio{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--faint);flex:none;display:grid;place-items:center}
+.radio.on{box-shadow:none;background:var(--blue)}
+.radio.on::after{content:"";width:7px;height:7px;border-radius:50%;background:#fff}
+.row.pick{cursor:pointer}
+.row.pick:hover{background:var(--row-hover)}
+
+/* wallpapers + accents */
+.walls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px}
+.wall{aspect-ratio:16/10;border-radius:10px;position:relative;cursor:pointer;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12);transition:transform .2s}
+.wall:hover{transform:scale(1.03)}
+.wall.on{box-shadow:0 0 0 2.5px var(--bg),0 0 0 4.5px var(--blue)}
+.wall span{position:absolute;left:0;right:0;bottom:-20px;text-align:center;font-size:11.5px;color:var(--dim)}
+.walls{padding-bottom:30px}
+.accents{display:flex;gap:12px;padding:14px}
+.acc{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .2s}
+.acc:hover{transform:scale(1.12)}
+.acc.on{box-shadow:0 0 0 2.5px var(--group),0 0 0 4.5px #fff}
+
+/* dock editor */
+.dockbar{display:flex;gap:10px;padding:14px;min-height:76px;align-items:center;flex-wrap:wrap}
+.dk{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;color:#fff;position:relative;cursor:grab;
+  box-shadow:inset 0 0 0 .5px rgba(255,255,255,.2),0 3px 8px rgba(0,0,0,.3)}
+.dk .ic{width:22px;height:22px;stroke-width:2}
+.dk .x{position:absolute;top:-6px;left:-6px;width:19px;height:19px;border-radius:50%;background:#636366;display:none;place-items:center;font-size:13px;line-height:1;cursor:pointer}
+.dk:hover .x{display:grid}
+.dk.dragging{opacity:.3}
+.avail{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+.avail .row{cursor:pointer}
+.avail .row:hover{background:var(--row-hover)}
+.avail .dk{width:30px;height:30px;border-radius:8px;cursor:pointer;box-shadow:none}
+.avail .dk .ic{width:16px;height:16px}
+.g-gray{background:linear-gradient(160deg,#8e8e93,#48484a)} .g-pink{background:linear-gradient(160deg,#ff6482,#d70040)}
+.g-green{background:linear-gradient(160deg,#4ce17a,#1a9e46)} .g-blue{background:linear-gradient(160deg,#5ac8fa,#0060df)}
+.g-indigo{background:linear-gradient(160deg,#8e7bff,#4a32d4)} .g-orange{background:linear-gradient(160deg,#ffb340,#ff7a00)}
+.g-teal{background:linear-gradient(160deg,#5be1e6,#0a9396)} .g-red{background:linear-gradient(160deg,#ff6961,#d70015)}
+.g-purple{background:linear-gradient(160deg,#da8fff,#9b30d9)}
+
+/* preview */
+.pv{border-left:1px solid var(--line);padding:26px 22px;display:flex;flex-direction:column;gap:14px;background:#19191b}
+.pv h2{font-size:12px;font-weight:600;color:var(--dim);display:flex;align-items:center;gap:8px}
+.frame{width:416px;height:260px;border-radius:16px;padding:8px;background:#0c0c0e;box-shadow:0 0 0 1px #3a3a3c,0 20px 40px rgba(0,0,0,.4);position:relative}
+.frame .scr{width:400px;height:250px;overflow:hidden;border-radius:8px;position:relative;background:#000}
+.frame iframe{width:1280px;height:800px;border:0;transform:scale(.3125);transform-origin:0 0;position:absolute;top:0;left:0}
+.frame .cam{position:absolute;left:3px;top:50%;width:3px;height:3px;border-radius:50%;background:#2a2a2c;margin-top:-1.5px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--group);border-radius:12px;padding:12px 14px}
+.stat b{font-size:20px;font-weight:600;display:block;letter-spacing:-.3px}
+.stat span{font-size:11.5px;color:var(--dim)}
+.tip{font-size:12px;color:var(--faint);line-height:1.5}
+code{font-family:"Cascadia Code",Consolas,monospace;font-size:11.5px;background:#111113;padding:10px 12px;border-radius:8px;display:block;color:#d1d1d6;user-select:text;white-space:pre-wrap;word-break:break-all}
+
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:9}
+.scrim.on{display:flex}
+.modal{width:440px;max-height:560px;background:#2c2c2f;border-radius:14px;box-shadow:0 0 0 .5px rgba(255,255,255,.12),0 30px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;overflow:hidden;animation:pop .3s var(--ease)}
+@keyframes pop{from{opacity:0;transform:scale(.95)}}
+.modal header{padding:16px 18px 10px;font-weight:600;font-size:15px}
+.modal .body{padding:0 18px 16px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.modal .list{overflow-y:auto;max-height:360px;margin:0 -8px;scrollbar-width:thin;scrollbar-color:#444 transparent}
+.modal .list .row{cursor:pointer;border-radius:8px}
+.modal .list .row:hover{background:var(--row-hover)}
+.modal .list .row::before{display:none}
+.modal footer{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
+.in{height:34px;border-radius:8px;background:#1c1c1e;border:0;outline:0;padding:0 11px;font-size:13.5px;box-shadow:inset 0 0 0 1px #3a3a3c;width:100%}
+.in:focus{box-shadow:0 0 0 2px var(--blue)}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,80px);background:#3a3a3c;padding:9px 16px;border-radius:10px;font-size:13px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);transition:transform .35s var(--ease);z-index:10;display:flex;gap:8px;align-items:center}
+.toast.on{transform:translate(-50%,0)}
+.toast .ic{color:var(--green)}
+</style>
+</head>
+<body>
+<div id="sprite" style="display:none"></div>
+<div class="app">
+  <aside>
+    <div class="brand"><img src="icon.svg" alt=""><div><b>TabDeck</b><span><i class="dot" id="tabDot"></i><em id="tabState" style="font-style:normal">Checking…</em></span></div></div>
+    <button class="nav on" data-s="home"><span class="sq" style="background:#0a84ff"><svg class="ic"><use href="#i-grid"/></svg></span>Home Screen</button>
+    <button class="nav" data-s="widgets"><span class="sq" style="background:#bf5af2"><svg class="ic"><use href="#i-widgets"/></svg></span>Widgets</button>
+    <button class="nav" data-s="dock"><span class="sq" style="background:#ff9f0a"><svg class="ic"><use href="#i-dock"/></svg></span>Dock</button>
+    <button class="nav" data-s="look"><span class="sq" style="background:#ff375f"><svg class="ic"><use href="#i-palette"/></svg></span>Appearance</button>
+    <button class="nav" data-s="notif"><span class="sq" style="background:#ff453a"><svg class="ic"><use href="#i-bell"/></svg></span>Notifications</button>
+    <button class="nav" data-s="screen"><span class="sq" style="background:#0a9396"><svg class="ic"><use href="#i-screens"/></svg></span>Second Screen</button>
+    <button class="nav" data-s="tablet"><span class="sq" style="background:#8e8e93"><svg class="ic"><use href="#i-tablet"/></svg></span>Tablet</button>
+    <button class="nav" data-s="mic"><span class="sq" style="background:#30d158"><svg class="ic"><use href="#i-mic"/></svg></span>Microphone</button>
+    <button class="nav" data-s="perf"><span class="sq" style="background:#40c8e0"><svg class="ic"><use href="#i-gauge"/></svg></span>Performance</button>
+    <div class="side-foot">Changes apply to the tablet instantly.<br>Closing this window uses no memory.</div>
+  </aside>
+
+  <main>
+    <!-- HOME -->
+    <section id="s-home" class="on">
+      <h1>Home Screen</h1><p class="lead">Apps and websites on the tablet. Drag to reorder, click a name to rename.</p>
+      <div class="label"><span>APPS &amp; WEBSITES</span><div class="btns"><button class="btn" id="addAppBtn"><svg class="ic"><use href="#i-plus"/></svg>App</button><button class="btn" id="addWebBtn"><svg class="ic"><use href="#i-globe"/></svg>Website</button></div></div>
+      <div class="group" id="appList"></div>
+    </section>
+
+    <!-- WIDGETS -->
+    <section id="s-widgets">
+      <h1>Widgets</h1><p class="lead">Choose what the tablet shows on the left and in which order. Hide them all for a full-width app grid.</p>
+      <div class="label">WIDGETS</div>
+      <div class="group" id="widgetList"></div>
+      <p class="tip" style="margin:10px 4px">Hidden widgets aren't drawn at all. The laptop only gathers stats while the tablet is showing them.</p>
+    </section>
+
+    <!-- DOCK -->
+    <section id="s-dock">
+      <h1>Dock</h1><p class="lead">Quick actions at the bottom of the tablet. Drag to reorder, hover and press × to remove (max 8).</p>
+      <div class="label">IN THE DOCK</div>
+      <div class="group"><div class="dockbar" id="dockBar"></div></div>
+      <div class="label">ADD AN ACTION</div>
+      <div class="group avail" id="dockAvail"></div>
+    </section>
+
+    <!-- APPEARANCE -->
+    <section id="s-look">
+      <h1>Appearance</h1><p class="lead">Wallpaper, accent colour and clock style.</p>
+      <div class="label">WALLPAPER</div>
+      <div class="group"><div class="walls" id="walls"></div></div>
+      <div class="label">ACCENT COLOUR</div>
+      <div class="group"><div class="accents" id="accents"></div></div>
+      <div class="label">CLOCK</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">24-hour time</div></div><button class="sw" data-k="clock24"></button></div>
+        <div class="row"><div class="grow"><div class="t">Show date</div></div><button class="sw" data-k="show_date"></button></div>
+      </div>
+    </section>
+
+    <!-- NOTIFICATIONS -->
+    <section id="s-notif">
+      <h1>Notifications</h1><p class="lead">Banners and the chime on the tablet.</p>
+      <div class="label">ALERTS</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Play sound</div><div class="d">Soft two-note chime from the tablet speaker</div></div><button class="sw" data-k="sound"></button></div>
+        <div class="row"><div class="grow"><div class="t">Volume</div></div><input type="range" min="0" max="1" step="0.05" id="volume"></div>
+        <div class="row"><div class="grow"><div class="t">Banner stays for</div></div><div class="seg" data-k="banner_secs"><button data-v="4">4 s</button><button data-v="6">6 s</button><button data-v="10">10 s</button></div></div>
+        <div class="row"><div class="grow"><div class="t">Try it</div></div><button class="btn" id="testNote">Send test notification</button></div>
+      </div>
+      <div class="label">SEND FROM ANY SCRIPT</div>
+      <code>curl -X POST localhost:8765/notify -d "{\"title\":\"Build done\",\"body\":\"All tests passed\",\"level\":\"done\"}"</code>
+      <p class="tip" style="margin:8px 4px">Levels: info, done, warn, error. Works from Python, Node, batch files or Claude Code hooks.</p>
+    </section>
+
+    <!-- SECOND SCREEN -->
+    <section id="s-screen">
+      <h1>Second Screen</h1><p class="lead">Use the tablet as an extra touch-screen monitor over USB. Three-finger tap (or Back) on the tablet returns to the dashboard.</p>
+      <div class="stats" style="margin-bottom:6px">
+        <div class="stat"><b id="dState">–</b><span>Status</span></div>
+        <div class="stat"><b id="dLat">–</b><span>Delay to the tablet screen</span></div>
+      </div>
+      <div class="label">CONTROL</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Second screen</div><div class="d">Switches the tablet out of the dashboard</div></div><button class="btn primary" id="dToggle">Start</button></div>
+      </div>
+      <div class="label">MODE</div>
+      <div class="group">
+        <div class="row pick" data-dm="0"><div class="radio" id="dmExt"></div><div class="grow"><div class="t">Extend</div><div class="d" id="dExtNote">A new 1280×800 screen next to your laptop, 45 fps</div></div></div>
+        <div class="row pick" data-dm="1"><div class="radio" id="dmMir"></div><div class="grow"><div class="t">Mirror</div><div class="d">Shows your laptop screen on the tablet, 30 fps</div></div></div>
+      </div>
+      <p class="tip" style="margin:10px 4px">Only runs while it's on: about 0.5% CPU and 90 MB, using the GPU's video encoder. Arrange the new screen in Windows Settings › Display.</p>
+    </section>
+
+    <!-- TABLET -->
+    <section id="s-tablet">
+      <h1>Tablet</h1><p class="lead">Settings sent to the tablet over USB.</p>
+      <div class="label">DISPLAY</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Automatic brightness</div><div class="d">Let the tablet decide from room light</div></div><button class="sw" id="autoBright"></button></div>
+        <div class="row" id="brightRow"><svg class="ic" style="color:var(--dim)"><use href="#i-sun"/></svg><input type="range" min="5" max="255" step="5" id="bright" style="max-width:none"><svg class="ic" style="width:22px;height:22px"><use href="#i-sun"/></svg></div>
+      </div>
+      <div class="label">SOUND</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Play laptop sound on the tablet</div><div class="d" id="spkState">Music, videos, calls, everything your laptop plays</div></div><button class="sw" data-k="tab_speaker"></button></div>
+        <div class="row"><div class="grow"><div class="t">Mute laptop speakers meanwhile</div><div class="d">They unmute again when you switch this off</div></div><button class="sw" data-k="speaker_mute_laptop"></button></div>
+      </div>
+      <div class="label">CONNECTION</div>
+      <div class="group">
+        <div class="row"><div class="grow"><div class="t">Status</div></div><span class="d" id="connText">–</span></div>
+        <div class="row"><div class="grow"><div class="t">Link</div><div class="d">USB cable only, no Wi-Fi used</div></div><span class="tag">USB</span></div>
+      </div>
+    </section>
+
+    <!-- MIC -->
+    <section id="s-mic">
+      <h1>Microphone</h1><p class="lead">The tablet's mic appears on the laptop as <b>CABLE Output</b>.</p>
+      <div class="label">TAB MIC</div>
+      <div class="group"><div class="row"><div class="grow"><div class="t">Microphone on</div><div class="d" id="micState">–</div></div><button class="sw" id="micSw"></button></div></div>
+      <div class="label">SOUND MODE</div>
+      <div class="group" id="micModes"></div>
+    </section>
+
+    <!-- PERFORMANCE -->
+    <section id="s-perf">
+      <h1>Performance</h1><p class="lead">How much the Command Center costs your laptop.</p>
+      <div class="stats" style="margin-bottom:6px">
+        <div class="stat"><b id="pRam">–</b><span>RAM in use</span></div>
+        <div class="stat"><b id="pCpu">–</b><span>CPU</span></div>
+      </div>
+      <div class="label">STATS REFRESH</div>
+      <div class="group"><div class="row"><div class="grow"><div class="t">Update every</div><div class="d">Slower means even less CPU</div></div><div class="seg" data-k="interval"><button data-v="1">1 s</button><button data-v="2">2 s</button><button data-v="5">5 s</button></div></div></div>
+      <div class="label">STARTUP</div>
+      <div class="group"><div class="row"><div class="grow"><div class="t">Start with Windows</div><div class="d">Runs the tiny server at login; the tablet lights up when plugged in</div></div><button class="sw" id="autoSw"></button></div></div>
+    </section>
+  </main>
+
+  <div class="pv">
+    <h2><i class="dot on"></i>LIVE ON YOUR TABLET</h2>
+    <div class="frame"><i class="cam"></i><div class="scr"><iframe id="pvFrame" src="/?preview=1" title="Tablet preview"></iframe></div></div>
+    <p class="tip">This preview is the real dashboard. Everything you change here appears on the tablet at the same moment.</p>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"><svg class="ic"><use href="#i-check"/></svg><span id="toastT"></span></div>
+
+<script src="themes.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const post=(u,b)=>fetch(u,{method:'POST',body:JSON.stringify(b||{})}).then(r=>r.json());
+loadSprite();
+let S={}, apps=[];
+
+let tT;function toast(t){$('toastT').textContent=t;$('toast').classList.add('on');clearTimeout(tT);tT=setTimeout(()=>$('toast').classList.remove('on'),1600);}
+async function save(patch,msg){S=await post('settings',patch);render();if(msg)toast(msg);}
+
+/* nav */
+document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='s-'+b.dataset.s));
+  if(b.dataset.s==='perf')status();});
+
+/* generic drag-to-reorder for rows */
+function sortable(container,sel,onDrop){
+  let dragEl=null;
+  container.querySelectorAll(sel).forEach(el=>{
+    el.draggable=true;
+    el.ondragstart=e=>{dragEl=el;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';};
+    el.ondragend=()=>{el.classList.remove('dragging');container.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));};
+    el.ondragover=e=>{e.preventDefault();if(el!==dragEl){container.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));el.classList.add('over');}};
+    el.ondrop=e=>{e.preventDefault();if(!dragEl||el===dragEl)return;
+      const items=[...container.querySelectorAll(sel)];
+      items.indexOf(dragEl)<items.indexOf(el)?el.after(dragEl):el.before(dragEl);
+      onDrop([...container.querySelectorAll(sel)].map(x=>x.dataset.id));};
+  });
+}
+
+/* ---------- home screen */
+function renderApps(){
+  $('appList').innerHTML=apps.length?apps.map(a=>`<div class="row drag" data-id="${a.id}">
+    <svg class="ic handle"><use href="#i-drag"/></svg>
+    ${a.icon?`<img class="appic${a.web?' web':''}" src="icons/${a.icon}" alt="">`:`<div class="letter">${esc(a.name[0])}</div>`}
+    <div class="grow"><input class="name-in" value="${esc(a.name)}" data-id="${a.id}" spellcheck="false"></div>
+    ${a.web?'<span class="tag">Website</span>':''}
+    <button class="iconbtn del" data-rm="${a.id}" title="Remove"><svg class="ic"><use href="#i-trash"/></svg></button></div>`).join('')
+    :'<div class="row"><div class="grow d">No apps yet. Add one above.</div></div>';
+  sortable($('appList'),'.row.drag',async ids=>{apps=await post('apps/order',{ids});toast('Order saved');});
+}
+$('appList').addEventListener('click',async e=>{const b=e.target.closest('[data-rm]');if(!b)return;
+  apps=await post('apps/remove',{id:b.dataset.rm});renderApps();toast('Removed');});
+$('appList').addEventListener('change',async e=>{const i=e.target.closest('.name-in');if(!i)return;
+  apps=await post('apps/rename',{id:i.dataset.id,name:i.value});toast('Renamed');});
+$('appList').addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
+
+function modal(html){$('modal').innerHTML=html;$('scrim').classList.add('on');}
+function closeModal(){$('scrim').classList.remove('on');}
+$('scrim').onclick=e=>{if(e.target===$('scrim'))closeModal();};
+addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+let startApps=null;
+$('addAppBtn').onclick=async()=>{
+  modal(`<header>Add an app</header><div class="body"><input class="in" id="mq" placeholder="Search apps on this PC" autofocus><div class="list" id="ml"><div class="row d">Loading…</div></div></div><footer><button class="btn" onclick="closeModal()">Done</button></footer>`);
+  if(!startApps)startApps=await fetch('startapps').then(r=>r.json());
+  const draw=()=>{const q=$('mq').value.toLowerCase();
+    $('ml').innerHTML=startApps.filter(a=>a.name.toLowerCase().includes(q)).slice(0,150).map(a=>
+      `<div class="row" data-appid="${esc(a.appid)}" data-name="${esc(a.name)}"><div class="letter">${esc(a.name[0].toUpperCase())}</div><div class="grow">${esc(a.name)}</div><svg class="ic" style="color:var(--blue)"><use href="#i-plus"/></svg></div>`).join('')||'<div class="row d">No matches</div>';};
+  draw();$('mq').oninput=draw;$('mq').focus();
+  $('ml').onclick=async e=>{const r=e.target.closest('.row[data-appid]');if(!r)return;r.style.opacity=.4;
+    apps=await post('apps/add',{appid:r.dataset.appid,name:r.dataset.name});
+    startApps=startApps.filter(a=>a.appid!==r.dataset.appid);renderApps();draw();toast(`Added ${r.dataset.name}`);};
+};
+$('addWebBtn').onclick=()=>{
+  modal(`<header>Add a website</header><div class="body"><input class="in" id="wu" placeholder="https://example.com"><input class="in" id="wn" placeholder="Name (optional)">
+    <p class="tip">Opens in your default browser. The site's own icon is fetched once.</p></div>
+    <footer><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" id="wAdd">Add</button></footer>`);
+  $('wu').focus();
+  const go=async()=>{const u=$('wu').value.trim();if(!u)return;$('wAdd').textContent='Adding…';
+    const r=await post('apps/add_web',{url:u,name:$('wn').value});if(Array.isArray(r)){apps=r;renderApps();closeModal();toast('Website added');}else $('wAdd').textContent='Add';};
+  $('wAdd').onclick=go;$('wn').onkeydown=$('wu').onkeydown=e=>{if(e.key==='Enter')go();};
+};
+
+/* ---------- widgets */
+function renderWidgets(){
+  $('widgetList').innerHTML=S.widgets.map(w=>{const m=WIDGETS[w.id];return `<div class="row drag" data-id="${w.id}">
+    <svg class="ic handle"><use href="#i-drag"/></svg><div class="grow"><div class="t">${m.name}</div><div class="d">${m.desc}</div></div>
+    <span class="tag">${m.size}</span><button class="sw${w.on?' on':''}" data-wid="${w.id}"></button></div>`;}).join('');
+  sortable($('widgetList'),'.row.drag',ids=>save({widgets:ids.map(id=>S.widgets.find(w=>w.id===id))},'Order saved'));
+}
+$('widgetList').addEventListener('click',e=>{const b=e.target.closest('[data-wid]');if(!b)return;
+  save({widgets:S.widgets.map(w=>w.id===b.dataset.wid?{...w,on:!w.on}:w)});});
+
+/* ---------- dock */
+function renderDock(){
+  $('dockBar').innerHTML=S.dock.map(a=>{const d=DOCK_ACTIONS[a];if(!d)return'';
+    return `<div class="dk ${d.g}" data-id="${a}" title="${d.label}"><svg class="ic${d.fill?' fill':''}"><use href="#${d.icon}"/></svg><span class="x" data-x="${a}">×</span></div>`;}).join('')
+    ||'<span class="d">Empty: the dock is hidden on the tablet.</span>';
+  sortable($('dockBar'),'.dk',ids=>save({dock:ids},'Order saved'));
+  const avail=Object.keys(DOCK_ACTIONS).filter(a=>!S.dock.includes(a));
+  $('dockAvail').innerHTML=avail.map(a=>{const d=DOCK_ACTIONS[a];return `<div class="row" data-add="${a}"><div class="dk ${d.g}"><svg class="ic${d.fill?' fill':''}"><use href="#${d.icon}"/></svg></div><div class="grow">${d.label}</div><svg class="ic" style="color:var(--blue)"><use href="#i-plus"/></svg></div>`;}).join('');
+}
+$('dockBar').addEventListener('click',e=>{const x=e.target.closest('[data-x]');if(x)save({dock:S.dock.filter(a=>a!==x.dataset.x)});});
+$('dockAvail').addEventListener('click',e=>{const r=e.target.closest('[data-add]');if(!r)return;
+  if(S.dock.length>=8)return toast('The dock holds up to 8');save({dock:[...S.dock,r.dataset.add]});});
+
+/* ---------- appearance */
+function renderLook(){
+  $('walls').innerHTML=Object.entries(THEMES).map(([k,t])=>`<div class="wall${S.wallpaper===k?' on':''}" data-wall="${k}" style="background-color:${t.base};background-image:${themeCss(k)}"><span>${t.name}</span></div>`).join('');
+  $('accents').innerHTML=Object.entries(ACCENTS).map(([k,c])=>`<div class="acc${S.accent===k?' on':''}" data-acc="${k}" title="${k}" style="background:${c}"></div>`).join('');
+}
+$('walls').onclick=e=>{const w=e.target.closest('[data-wall]');if(w)save({wallpaper:w.dataset.wall});};
+$('accents').onclick=e=>{const a=e.target.closest('[data-acc]');if(a)save({accent:a.dataset.acc});};
+
+/* ---------- switches / segments bound to settings keys */
+document.querySelectorAll('.sw[data-k]').forEach(b=>b.onclick=()=>save({[b.dataset.k]:!S[b.dataset.k]}));
+document.querySelectorAll('.seg[data-k]').forEach(g=>g.onclick=e=>{const b=e.target.closest('[data-v]');if(b)save({[g.dataset.k]:+b.dataset.v});});
+$('volume').onchange=e=>save({volume:+e.target.value});
+$('testNote').onclick=()=>{post('test_note');toast('Sent to the tablet');};
+
+/* ---------- tablet */
+$('autoBright').onclick=()=>save({brightness:S.brightness==null?150:null});
+let bT;$('bright').oninput=e=>{clearTimeout(bT);bT=setTimeout(()=>save({brightness:+e.target.value}),120);};
+
+/* ---------- mic */
+const MODES=[['mic-voice-communication','Voice call','Louder, auto-levelled, background noise reduced (recommended)'],
+  ['mic','Standard','Quiet, natural, no processing by Android'],['mic-camcorder','Video recording','Tuned for recording videos'],
+  ['mic-unprocessed','Raw','Completely unprocessed sound']];
+function renderMic(){
+  $('micModes').innerHTML=MODES.map(([k,t,d])=>`<div class="row pick" data-mode="${k}"><div class="radio${S.mic_source===k?' on':''}"></div><div class="grow"><div class="t">${t}</div><div class="d">${d}</div></div></div>`).join('');
+}
+$('micModes').onclick=e=>{const r=e.target.closest('[data-mode]');if(r)save({mic_source:r.dataset.mode},'Mic mode changed');};
+$('micSw').onclick=async()=>{const on=!$('micSw').classList.contains('on');$('micSw').classList.toggle('on',on);await post('mic',{on});status();};
+
+/* ---------- second screen */
+let dActive=false;
+$('dToggle').onclick=async()=>{await post('mode',{mode:dActive?'dashboard':'display'});toast(dActive?'Back to dashboard':'Starting second screen…');setTimeout(status,2500);};
+document.querySelectorAll('[data-dm]').forEach(r=>r.onclick=()=>save({display_mirror:r.dataset.dm==='1'},'Applies next time it starts'));
+
+/* ---------- performance + status */
+$('autoSw').onclick=async()=>{const r=await post('autostart',{on:!$('autoSw').classList.contains('on')});
+  $('autoSw').classList.toggle('on',r.on);toast(r.on?'Starts with Windows':'Won\'t start with Windows');};
+async function status(){
+  try{const s=await fetch('status').then(r=>r.json());
+    $('tabDot').className='dot'+(s.tablet?' on':'');$('tabState').textContent=s.tablet?'Tablet connected':'Tablet not connected';
+    $('connText').textContent=s.tablet?'Connected':'Not connected';
+    $('pRam').textContent=s.ram_mb+' MB';$('pCpu').textContent=s.cpu.toFixed(1)+' %';
+    $('autoSw').classList.toggle('on',s.autostart);
+    $('micSw').classList.toggle('on',s.mic.on);
+    $('spkState').textContent=s.speaker.active?'Playing on the tablet now':'Music, videos, calls, everything your laptop plays';
+    dActive=s.display.active;
+    $('dState').textContent=dActive?'On':'Off';$('dToggle').textContent=dActive?'Stop':'Start';
+    $('dLat').textContent=dActive&&s.display.latency_ms?Math.round(s.display.latency_ms)+' ms':'–';
+    $('dExtNote').textContent=s.display.driver?'A new 1280×800 screen next to your laptop, 45 fps':'Needs the Parsec virtual display driver (tools\\parsec-vdd). Mirror is used until then.';
+    $('micState').textContent=!s.mic.available?'scrcpy not installed':s.mic.on?'Live, sending to CABLE Output':'Off';
+  }catch{$('tabState').textContent='Server not running';}
+}
+
+function render(){
+  renderWidgets();renderDock();renderLook();renderMic();
+  document.querySelectorAll('.sw[data-k]').forEach(b=>b.classList.toggle('on',!!S[b.dataset.k]));
+  document.querySelectorAll('.seg[data-k] button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S[b.parentElement.dataset.k]));
+  $('volume').value=S.volume;
+  $('dmExt').classList.toggle('on',!S.display_mirror);$('dmMir').classList.toggle('on',!!S.display_mirror);
+  $('autoBright').classList.toggle('on',S.brightness==null);
+  $('brightRow').style.display=S.brightness==null?'none':'';
+  if(S.brightness!=null)$('bright').value=S.brightness;
+}
+
+(async()=>{
+  [S,apps]=await Promise.all([fetch('settings').then(r=>r.json()),fetch('apps').then(r=>r.json())]);
+  render();renderApps();status();
+  setInterval(()=>{if(document.visibilityState==='visible')status();},4000);
+})();
+</script>
+</body>
+</html>
