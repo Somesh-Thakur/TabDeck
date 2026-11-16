@@ -248,7 +248,8 @@ def stats_loop():
         if now - last_gpu >= 3 or g is None:  # GPU at most every 3 s keeps the dGPU from being nagged
             g, last_gpu = gpu.read(), now
         vm, bat = psutil.virtual_memory(), psutil.sensors_battery()
-        s = {"c": round(psutil.cpu_percent()), "r": round(vm.percent), "ru": round(vm.used / 2**30, 1),
+        s = {"c": round(psutil.cpu_percent()), "k": [round(x) for x in psutil.cpu_percent(percpu=True)],
+             "r": round(vm.percent), "ru": round(vm.used / 2**30, 1),
              "rt": round(vm.total / 2**30), "g": g, "b": bat and [round(bat.percent), bat.power_plugged]}
         if last:
             dt = now - last[1]

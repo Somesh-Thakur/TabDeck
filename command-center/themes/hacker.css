@@ -1,0 +1,140 @@
+/*
+ * @name Hacker
+ * @author TabDeck
+ * @description No rings, all graphs: segmented LED bars, a per-core CPU chart, live history lines, terminal everything.
+ * @colors #000000 #001a0a #33ff66 #b8ff33 #00ffaa
+ */
+
+/* ================================================================ palette */
+:root {
+  --text: #33ff66; --dim: #22c24e; --faint: #157a33;
+  --glass: rgba(0, 14, 5, .88); --glass-hi: rgba(51, 255, 102, .09); --hair: rgba(51, 255, 102, .32);
+  --accent: #33ff66; --blue: #33ff66; --red: #ff4d4d; --green: #33ff66; --cyan: #00ffaa; --purple: #b8ff33; --orange: #ffb000;
+  --ring-cpu: #33ff66; --ring-gpu: #b8ff33; --ring-ram: #00ffaa;
+  --r-widget: 3px;
+  --wall-base: #000; --wall-img: radial-gradient(120% 90% at 50% 40%, #001a0a 0%, #000 70%);
+  --seg: repeating-linear-gradient(90deg, #33ff66 0 7px, transparent 7px 9px);        /* LED bar */
+  --seg-off: repeating-linear-gradient(90deg, rgba(51, 255, 102, .1) 0 7px, transparent 7px 9px);
+}
+html, body { font-family: "Cascadia Mono", Consolas, "Droid Sans Mono", monospace !important; }
+* { text-shadow: 0 0 5px rgba(51, 255, 102, .4); }
+
+/* ================================================================ background: data rain + scanlines */
+body::before {                       /* slow falling streaks (GPU-composited transform, cheap) */
+  content: ""; position: fixed; left: 0; right: 0; top: -100%; height: 200%; pointer-events: none; z-index: 0; opacity: .5;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 140px, rgba(51, 255, 102, .14) 140px 141px, transparent 141px 260px),
+    repeating-linear-gradient(90deg, transparent 0 37px, rgba(51, 255, 102, .05) 37px 38px);
+  animation: rain 14s linear infinite;
+}
+@keyframes rain { to { transform: translateY(50%); } }
+body::after {                        /* scanlines + vignette */
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .25) 0 1px, transparent 1px 3px),
+              radial-gradient(130% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, .6) 100%);
+}
+.screen { z-index: 1; }
+
+/* ================================================================ header */
+.when .date { color: var(--dim); font-size: 14px; }
+.when .date::before { content: "root@tabdeck:~$ date  "; color: var(--faint); }
+.when .time { font-weight: 400; letter-spacing: -3px; }
+.when .time::after { content: "_"; animation: blink 1s steps(1) infinite; margin-left: 4px; }
+@keyframes blink { 50% { opacity: 0; } }
+.pill { border-radius: 2px; box-shadow: inset 0 0 0 1px var(--hair) !important; text-transform: uppercase; letter-spacing: 1px; }
+.pill::before { content: "["; } .pill::after { content: "]"; }
+.bell::before, .bell::after { content: none; }
+.batt { box-shadow: inset 0 0 0 1.2px var(--dim); } .batt i { background: var(--text); }
+
+/* ================================================================ layout: everything is a graph */
+.screen  { grid-template-columns: 760px 1fr; }
+.widgets { grid-template-columns: repeat(4, 1fr); }
+[data-w="perf"]  { grid-column: 1 / 3 !important; grid-row: 1 / 3 !important; }
+[data-w="hist"]  { display: flex !important; grid-column: 3 / 5 !important; grid-row: 1 !important; }   /* always on */
+[data-w="gpu"]   { grid-column: 3 / 4 !important; grid-row: 2 !important; }
+[data-w="net"]   { grid-column: 4 / 5 !important; grid-row: 2 !important; }
+[data-w="media"] { grid-column: 1 / 5 !important; grid-row: 3 !important; }
+[data-w="mic"]   { display: none !important; }
+
+/* ================================================================ widgets: terminal boxes */
+.w, .dock, .banner, .ask, .sheet, .np-art, .app .tile, .dk {
+  border-radius: 3px !important; backdrop-filter: none !important;
+  box-shadow: inset 0 0 0 1px var(--hair), 0 0 16px rgba(51, 255, 102, .07) !important;
+}
+.w::before { display: none; }
+.w-title { text-transform: uppercase; letter-spacing: 2px; color: var(--text); }
+.w-title .ic { display: none; }
+.w-title::before { content: "> "; color: var(--faint); }
+
+/* SYS.MONITOR: rings out, LED bars + core chart in */
+.perf { flex-direction: column !important; align-items: stretch !important; padding: 16px 18px !important; gap: 0 !important; }
+.perf::after { content: "SYS.MONITOR  //  live"; order: -1; font-size: 13px; letter-spacing: 2px; color: var(--text); margin-bottom: 12px; }
+.perf .rings, .perf .legend { display: none !important; }
+.perf .pbars { display: flex; gap: 9px; }
+.pb { font-size: 14px; }
+.pb .pl { width: 52px; color: var(--dim); }
+.pb .pt { height: 16px; border-radius: 0; background: var(--seg-off); }
+.pb .pt i { background: var(--seg); box-shadow: 0 0 8px rgba(51, 255, 102, .5); }
+.pb[data-b="temp"] .pt i { background: repeating-linear-gradient(90deg, #ffb000 0 7px, transparent 7px 9px); }
+.pb[data-b="vram"] .pt i { background: repeating-linear-gradient(90deg, #00ffaa 0 7px, transparent 7px 9px); }
+.pb b { width: 56px; color: var(--text); }
+.cores-h { color: var(--faint); margin-top: 10px; }
+.cores-h::after { content: "  [per-core load]"; }
+.cores { gap: 5px; border-bottom: 1px solid var(--hair); padding-bottom: 2px; }
+.cores i { border-radius: 0; background: repeating-linear-gradient(0deg, #33ff66 0 4px, transparent 4px 6px);
+           box-shadow: 0 0 6px rgba(51, 255, 102, .35); }
+
+/* history graph */
+.hist-svg .grid { stroke-dasharray: 3 4; }
+.hist-svg path { stroke-width: 1.8; filter: drop-shadow(0 0 3px currentColor); }
+#hCpuA { opacity: .18 !important; }
+.hist-legend { text-transform: uppercase; }
+
+/* gpu temp + network */
+.big { font-weight: 400; }
+.tempbar { height: 10px; border-radius: 0; background: repeating-linear-gradient(90deg, #33ff66 0 7px, transparent 7px 9px) !important; }
+.tempbar i { border-radius: 0; width: 6px; height: 16px; margin: -8px 0 0 -3px; background: #ffb000; box-shadow: 0 0 8px #ffb000; }
+.spark path { stroke-width: 1.6; filter: drop-shadow(0 0 3px currentColor); }
+.net .rate { color: var(--text) !important; }
+
+/* now playing */
+.np-bg { display: none; }
+.np-art { filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(3.5) brightness(.85); }
+.np-title { text-transform: uppercase; letter-spacing: 1px; }
+.np-title::before { content: "▶ "; color: var(--faint); }
+.np-artist, .np-times, .np-vol { color: var(--dim) !important; } .np-artist b { color: var(--faint) !important; }
+.np-ctl .pp { background: transparent !important; color: var(--text) !important; box-shadow: inset 0 0 0 1.5px var(--text) !important; border-radius: 3px !important; }
+.np-ctl button { border-radius: 3px; }
+.sbar .trk { height: 10px !important; border-radius: 0 !important; background: var(--seg-off) !important; }
+.sbar .fill { border-radius: 0 !important; background: var(--seg) !important; }
+
+/* ================================================================ apps: `ls` output */
+.apps-head h2 { font-size: 0; }
+.apps-head h2::before { content: "~/apps $ ls"; font-size: 16px; letter-spacing: 1px; }
+#editBtn { text-transform: lowercase; } #editBtn::before { content: "["; } #editBtn::after { content: "]"; }
+.grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.app .tile { width: 68px; height: 68px; background: rgba(0, 24, 8, .9) !important; }
+.app .tile img { width: 42px; height: 42px; filter: grayscale(1) sepia(1) hue-rotate(70deg) saturate(4) brightness(.9) !important; }
+.app .tile.web { background: rgba(0, 24, 8, .9) !important; }
+.globe { background: #001a0a; border-radius: 0; }
+.app .name { color: var(--text) !important; text-transform: lowercase; font-size: 12px; }
+.app .name::before { content: "./"; color: var(--faint); }
+
+/* ================================================================ dock */
+.dock { background: rgba(0, 10, 4, .92) !important; border-radius: 3px !important; }
+.dk { background: rgba(0, 24, 8, .95) !important; color: var(--text) !important; }
+.dk.toggle { opacity: .4; filter: none; } .dk.toggle.on { opacity: 1; box-shadow: inset 0 0 0 2px var(--text), 0 0 14px rgba(51, 255, 102, .4) !important; }
+
+/* ================================================================ pop-ups */
+.banner, .ask { background: rgba(0, 14, 5, .97) !important; }
+.banner .gl, .ask .gl { background: #002a10 !important; border-radius: 2px; }
+.ask h4 { text-transform: uppercase; letter-spacing: 1px; }
+.ask h4::before { content: "!! "; color: #ffb000; }
+.ask pre { background: #000 !important; color: var(--text) !important; border-radius: 2px; box-shadow: inset 0 0 0 1px var(--hair); }
+.ask pre::before { content: "$ "; color: var(--faint); }
+.ask .bar i { background: #ffb000 !important; }
+.ask .btns button { border-radius: 3px !important; text-transform: uppercase; letter-spacing: 2px; }
+.ask .btns button::before { content: "[ "; } .ask .btns button::after { content: " ]"; }
+.ask .allow { background: #33ff66 !important; color: #000 !important; text-shadow: none; }
+.ask .deny { background: transparent !important; color: #ff4d4d !important; box-shadow: inset 0 0 0 1px #ff4d4d; }
+.g-claude, .g-blue, .g-green, .g-orange, .g-pink, .g-discord { background: #002a10 !important; }

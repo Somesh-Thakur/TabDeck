@@ -77,6 +77,16 @@ header{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-
 .rings .trk{opacity:.2}
 .rings .val{transition:stroke-dashoffset .9s var(--ease)}
 .legend{display:flex;flex-direction:column;gap:16px;flex:1;min-width:0}
+/* optional bar graphs (themes switch them on) */
+.pbars{display:none;flex-direction:column;gap:7px;flex:1;min-width:0}
+.pb{display:flex;align-items:center;gap:10px;font-size:13px}
+.pb .pl{width:42px;color:var(--dim);font-weight:700}
+.pb .pt{flex:1;height:12px;border-radius:3px;background:var(--glass-hi);overflow:hidden}
+.pb .pt i{display:block;height:100%;width:0;background:var(--accent);transition:width .6s var(--ease)}
+.pb b{width:48px;text-align:right;font-weight:700}
+.cores-h{font-size:11px;font-weight:700;color:var(--faint);margin-top:6px;letter-spacing:1px}
+.cores{flex:1;display:flex;align-items:flex-end;gap:4px;min-height:30px}
+.cores i{flex:1;height:calc(var(--v,0) * 1%);min-height:2px;background:var(--accent);border-radius:2px 2px 0 0;transition:height .6s var(--ease)}
 .legend .k{font-size:13px;font-weight:700;letter-spacing:.2px}
 .legend .v{font-size:34px;font-weight:600;letter-spacing:-1px;line-height:1.05}
 .legend .v small{font-size:17px;font-weight:500;color:var(--dim);margin-left:1px;letter-spacing:0}
@@ -310,6 +320,16 @@ button:active{transform:scale(.9)}
         <div><div class="k" style="color:var(--ring-gpu)">GPU</div><div class="v" id="gpu">–<small>%</small></div><div class="s" id="gpuName">&nbsp;</div></div>
         <div><div class="k" style="color:var(--ring-ram)">Memory</div><div class="v" id="ram">–<small>%</small></div><div class="s" id="ramSub">&nbsp;</div></div>
       </div>
+      <!-- bar graphs + per-core chart: hidden by default, themes can show them (.perf .pbars { display:flex }) -->
+      <div class="pbars">
+        <div class="pb" data-b="cpu"><span class="pl">CPU</span><span class="pt"><i id="pbCpu"></i></span><b id="pvCpu">–</b></div>
+        <div class="pb" data-b="gpu"><span class="pl">GPU</span><span class="pt"><i id="pbGpu"></i></span><b id="pvGpu">–</b></div>
+        <div class="pb" data-b="ram"><span class="pl">RAM</span><span class="pt"><i id="pbRam"></i></span><b id="pvRam">–</b></div>
+        <div class="pb" data-b="vram"><span class="pl">VRAM</span><span class="pt"><i id="pbVram"></i></span><b id="pvVram">–</b></div>
+        <div class="pb" data-b="temp"><span class="pl">TEMP</span><span class="pt"><i id="pbTemp"></i></span><b id="pvTemp">–</b></div>
+        <div class="cores-h">CORES</div>
+        <div class="cores" id="cores"></div>
+      </div>
     </div>
 
     <div class="w" data-w="gpu">
@@ -524,6 +544,18 @@ function onStats(s){
     H.d.push(s.d);H.u.push(s.u);if(H.d.length>30){H.d.shift();H.u.shift();}
     const m=Math.max(2e4,...H.d,...H.u);spark('sparkD',H.d,m);spark('sparkU',H.u,m);}
   if(s.b){$('lapPct').textContent=s.b[0]+'%';batt($('lapBat'),s.b[0],s.b[1]);}
+  bars(s);
+}
+/* bar graphs + per-core chart (only drawn when a theme shows them) */
+let coreEls=[];
+function bar(id,v,label){$('pb'+id).style.width=Math.max(0,Math.min(100,v))+'%';$('pv'+id).textContent=label;}
+function bars(s){
+  if(getComputedStyle(document.querySelector('.pbars')).display==='none')return;
+  bar('Cpu',s.c,s.c+'%');bar('Ram',s.r,s.r+'%');
+  if(s.g){bar('Gpu',s.g.u,s.g.u+'%');bar('Vram',s.g.vu/s.g.vt*100,s.g.vu+'G');bar('Temp',s.g.t,s.g.t+'°');}
+  const k=s.k||[];
+  if(coreEls.length!==k.length){$('cores').innerHTML=k.map(()=>'<i></i>').join('');coreEls=[...$('cores').children];}
+  k.forEach((v,i)=>coreEls[i].style.setProperty('--v',v));
 }
 
 /* History graphs: CPU / GPU / RAM over the last 5 or 30 minutes */
@@ -536,7 +568,7 @@ function histPath(idx,area){const now=Date.now()/1000,from=now-histRange;let d='
   for(let i=0;i<pts.length;i+=step){const p=pts[i],x=((p[0]-from)/histRange*300).toFixed(1),y=(100-Math.min(100,p[idx])).toFixed(1);
     d+=(d?'L':'M')+x+' '+y;if(first===null)first=x;last=x;}
   return area&&d?d+`L${last} 100L${first} 100Z`:d;}
-function histDraw(){if(!$('hist')||$('hist').style.display==='none')return;
+function histDraw(){if(!$('hist')||getComputedStyle($('hist')).display==='none')return;   // a theme may force it on
   $('hCpu').setAttribute('d',histPath(1));$('hCpuA').setAttribute('d',histPath(1,true));
   $('hGpu').setAttribute('d',histPath(2));$('hRam').setAttribute('d',histPath(3));
   const l=HIST[HIST.length-1];if(l){$('hlC').textContent=Math.round(l[1])+'%';$('hlG').textContent=l[2]==null?'–':Math.round(l[2])+'%';$('hlR').textContent=Math.round(l[3])+'%';}}

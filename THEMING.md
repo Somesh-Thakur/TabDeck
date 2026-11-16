@@ -24,6 +24,22 @@ The key tricks:
 .np.is-playing .np-art { animation: spin 9s linear infinite; }
 ```
 
+### No rings, all graphs: **Hacker**
+![Hacker](docs/themes/hacker.png)
+
+The stats widget also contains **bar graphs and a per-core CPU chart** that are hidden by default. Any theme can
+switch them on (and the rings off):
+
+```css
+.perf .rings, .perf .legend { display: none !important; }
+.perf .pbars { display: flex; }                        /* CPU / GPU / RAM / VRAM / TEMP bars + core chart */
+.pb .pt i  { background: repeating-linear-gradient(90deg, #33ff66 0 7px, transparent 7px 9px); }   /* LED look */
+.cores i   { background: #33ff66; }                    /* one bar per CPU core, height = load */
+[data-w="hist"] { display: flex !important; }          /* force the History graphs on */
+```
+Parts: `.pbars`, `.pb[data-b="cpu|gpu|ram|vram|temp"]` → `.pl` label, `.pt` track, `.pt i` fill, `b` value;
+`.cores-h` heading, `.cores i` core bars. See [`hacker.css`](command-center/themes/hacker.css).
+
 ## Install a theme
 TabDeck settings app → **Themes** → **Upload .css**. It applies instantly. Click any card to switch, and
 **Default** to go back. Uploaded themes have a 🗑 button.

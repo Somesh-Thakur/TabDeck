@@ -50,6 +50,10 @@
 /* .big { }   big numbers   .tempbar { }   temperature bar   .spark path { }   network graph  */
 /* .np-art .np-title .np-artist .sbar .trk .fill .np-ctl .pp       Now Playing parts          */
 /* .hist-svg path { }  #hCpu #hGpu #hRam                           history graph lines        */
+/* Bar graphs instead of rings (hidden by default):                                           */
+/*   .perf .rings, .perf .legend { display:none !important }   .perf .pbars { display:flex }   */
+/*   .pb[data-b="cpu|gpu|ram|vram|temp"] .pt i   bar fills      .cores i   per-core CPU bars    */
+/*   [data-w="hist"] { display:flex !important }   forces the History graphs on                */
 
 /* ------------------------------------------------------------ 5. apps + dock */
 /* .apps-head h2 { }   "Apps" title     .app .tile { }  icon tiles     .app .name { }  labels  */
