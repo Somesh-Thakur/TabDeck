@@ -16,6 +16,9 @@ tablet-app/*.idsig
 tablet-app/*.keystore
 tablet-app/restore.ps1
 
+# --- promo reel workspace (contains personal screen recordings) ---
+reel/
+
 # --- python / editor noise ---
 __pycache__/
 *.pyc

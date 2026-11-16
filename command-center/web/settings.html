@@ -89,7 +89,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .row.pick:hover{background:var(--row-hover)}
 
 /* wallpapers + accents */
-.walls{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px}
+.walls{display:grid;grid-template-columns:repeat(4,1fr);gap:34px 12px;padding:14px}
 .wall{aspect-ratio:16/10;border-radius:10px;position:relative;cursor:pointer;box-shadow:inset 0 0 0 .5px rgba(255,255,255,.12);transition:transform .2s}
 .wall:hover{transform:scale(1.03)}
 .wall.on{box-shadow:0 0 0 2.5px var(--bg),0 0 0 4.5px var(--blue)}
@@ -461,6 +461,7 @@ function render(){
 (async()=>{
   [S,apps]=await Promise.all([fetch('settings').then(r=>r.json()),fetch('apps').then(r=>r.json())]);
   render();renderApps();status();
+  const start=document.querySelector(`.nav[data-s="${location.hash.slice(1)}"]`);if(start)start.click();  // e.g. settings.html#look
   setInterval(()=>{if(document.visibilityState==='visible')status();},4000);
 })();
 </script>
